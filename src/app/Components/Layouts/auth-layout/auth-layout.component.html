@@ -1,0 +1,41 @@
+<div class="auth">
+  <div class="sky" aria-hidden="true">
+    <span class="blob blob--teal"></span>
+    <span class="blob blob--orange"></span>
+    <span class="bh-bubble bh-bubble--teal b1"></span>
+    <span class="bh-bubble bh-bubble--orange b2"></span>
+    <span class="bh-bubble bh-bubble--sunny b3"></span>
+    <span class="bh-bubble bh-bubble--white b4"></span>
+    <span class="bh-bubble bh-bubble--teal b5"></span>
+  </div>
+
+  <header class="auth-top">
+    <img src="assets/brand/logo.png" alt="Bubble Hope" class="logo" />
+    <button type="button" class="lang" (click)="language.toggle()">
+      <i class="bi bi-translate"></i>
+      {{ 'lang' | translate }}
+    </button>
+  </header>
+
+  <main class="stage">
+    <section class="pitch">
+      <span class="tag">
+        <i class="bi bi-lightning-charge-fill"></i>
+        {{ 'login.kicker' | translate }}
+      </span>
+      <h1>
+        <span class="ghost" aria-hidden="true">EXPRESS</span>
+        <span class="line">{{ 'login.heroTop' | translate }}</span>
+        <span class="line accent">{{ 'login.heroBottom' | translate }}</span>
+      </h1>
+      <p>{{ 'login.subtitle' | translate }}</p>
+      <div class="cups">
+        <img src="assets/brand/cups.png" alt="" />
+      </div>
+    </section>
+
+    <section class="panel">
+      <router-outlet></router-outlet>
+    </section>
+  </main>
+</div>

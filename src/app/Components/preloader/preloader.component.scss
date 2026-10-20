@@ -1,0 +1,40 @@
+.preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 251, 245, 0.6);
+  backdrop-filter: blur(6px);
+}
+
+.cup {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  height: 40px;
+}
+
+.cup span {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  animation: hop 0.9s var(--ease-bounce) infinite;
+  background: var(--orange);
+}
+
+.cup span:nth-child(2) {
+  background: var(--teal);
+  animation-delay: 0.12s;
+}
+
+.cup span:nth-child(3) {
+  background: var(--navy);
+  animation-delay: 0.24s;
+}
+
+@keyframes hop {
+  0%,
+  100% { transform: translateY(0); }
+  40% { transform: translateY(-20px); }
+}

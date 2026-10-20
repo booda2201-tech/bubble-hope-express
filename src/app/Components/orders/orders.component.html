@@ -1,0 +1,233 @@
+<section class="board">
+  <header class="summary">
+    <div class="summary-copy">
+      <h1>{{ 'orders.title' | translate }}</h1>
+      <p>
+        <b>{{ activeOrders.length }}</b> {{ 'orders.activeCount' | translate }}
+        <span class="sep"></span>
+        <b>{{ money(cashLeft) }}</b> {{ 'orders.currency' | translate }} {{ 'orders.toCollect' | translate }}
+      </p>
+    </div>
+    <div class="summary-actions">
+      <button
+        type="button"
+        class="refresh"
+        [class.muted]="!alerts.enabled"
+        (click)="toggleAlerts()"
+        [attr.aria-label]="(alerts.enabled ? 'alerts.turnOff' : 'alerts.turnOn') | translate"
+        [attr.title]="(alerts.enabled ? 'alerts.turnOff' : 'alerts.turnOn') | translate"
+      >
+        <i class="bi" [ngClass]="alerts.enabled ? 'bi-bell-fill' : 'bi-bell-slash'"></i>
+      </button>
+      <button
+        type="button"
+        class="refresh"
+        (click)="load(false)"
+        [class.spinning]="loading"
+        [attr.aria-label]="'orders.refresh' | translate"
+      >
+        <i class="bi bi-arrow-clockwise"></i>
+      </button>
+    </div>
+  </header>
+
+  <div class="alert-setup" *ngIf="alerts.needsSetup">
+    <i class="bi bi-bell"></i>
+    <p>
+      <b>{{ 'alerts.setupTitle' | translate }}</b>
+      <span>{{ 'alerts.setupBody' | translate }}</span>
+    </p>
+    <button type="button" (click)="toggleAlerts()">{{ 'alerts.enable' | translate }}</button>
+  </div>
+  <p class="alert-denied" *ngIf="alerts.enabled && alerts.permission === 'denied'">
+    <i class="bi bi-info-circle"></i>
+    {{ 'alerts.denied' | translate }}
+  </p>
+
+  <div class="tabs" role="tablist">
+    <button type="button" role="tab" [class.on]="tab === 'active'" (click)="tab = 'active'">
+      {{ 'orders.tabActive' | translate }}
+      <em>{{ activeOrders.length }}</em>
+    </button>
+    <button type="button" role="tab" [class.on]="tab === 'done'" (click)="tab = 'done'">
+      {{ 'orders.tabDone' | translate }}
+      <em>{{ doneOrders.length }}</em>
+    </button>
+  </div>
+
+  <div class="list" *ngIf="loading && !orders.length">
+    <div class="skeleton" *ngFor="let s of skeletons">
+      <span class="sk w40"></span>
+      <span class="sk w70"></span>
+      <span class="sk h44"></span>
+    </div>
+  </div>
+
+  <div class="empty" *ngIf="loadError">
+    <i class="bi bi-wifi-off"></i>
+    <h3>{{ 'orders.loadError' | translate }}</h3>
+    <button type="button" class="ghost-btn" (click)="load(false)">{{ 'orders.retry' | translate }}</button>
+  </div>
+
+  <div class="empty" *ngIf="!loading && !loadError && !visible.length">
+    <i class="bi" [ngClass]="tab === 'active' ? 'bi-cup-straw' : 'bi-check2-all'"></i>
+    <h3>{{ (tab === 'active' ? 'orders.emptyActive' : 'orders.emptyDone') | translate }}</h3>
+    <p *ngIf="tab === 'active'">{{ 'orders.emptyHint' | translate }}</p>
+  </div>
+
+  <div class="list" *ngIf="visible.length">
+    <article
+      class="order"
+      *ngFor="let order of visible; trackBy: trackById"
+      [ngClass]="'tone-' + order.status"
+      [class.busy]="updatingId === order.id"
+    >
+      <header class="order-head">
+        <div class="head-main">
+          <span class="code">{{ order.code }}</span>
+          <span class="when">
+            <i class="bi bi-clock"></i>{{ clock(order) }}
+            <ng-container *ngIf="dayLabel(order) as day"><span class="sep"></span>{{ day }}</ng-container>
+          </span>
+        </div>
+        <span class="status"><i class="dot"></i>{{ 'orders.status.' + order.status | translate }}</span>
+      </header>
+
+      <div class="customer">
+        <span class="initial">{{ initial(order) }}</span>
+        <div class="who">
+          <b dir="auto">{{ order.fullName }}</b>
+          <span dir="ltr">{{ order.phone }}</span>
+        </div>
+        <a class="contact call" [href]="callHref(order)" [attr.aria-label]="'orders.call' | translate">
+          <i class="bi bi-telephone-fill"></i>
+        </a>
+        <a
+          class="contact wa"
+          [href]="whatsAppHref(order)"
+          target="_blank"
+          rel="noopener"
+          [attr.aria-label]="'orders.whatsapp' | translate"
+        >
+          <i class="bi bi-whatsapp"></i>
+        </a>
+      </div>
+
+      <ol class="route">
+        <li class="stop stop--branch">
+          <span class="pin"><i class="bi bi-shop"></i></span>
+          <div class="stop-body">
+            <small>{{ (isDelivery(order) ? 'orders.pickFrom' : 'orders.pickup') | translate }}</small>
+            <b dir="auto">{{ branchName(order) || ('orders.branchLabel' | translate) }}</b>
+            <span dir="auto" *ngIf="branchAddress(order) as address">{{ address }}</span>
+            <a class="stop-btn" *ngIf="order.branchPhone" [href]="branchCallHref(order)">
+              <i class="bi bi-telephone-fill"></i>{{ 'orders.callBranch' | translate }}
+            </a>
+          </div>
+        </li>
+        <li class="stop stop--drop" *ngIf="isDelivery(order)">
+          <span class="pin"><i class="bi bi-geo-alt-fill"></i></span>
+          <div class="stop-body">
+            <small>{{ 'orders.dropTo' | translate }}</small>
+            <b *ngIf="street(order) as street"><bdi>{{ street }}</bdi></b>
+            <div class="units" *ngIf="unitParts(order).length">
+              <span class="unit" *ngFor="let unit of unitParts(order)">
+                {{ unit.label }} <bdi>{{ unit.value }}</bdi>
+              </span>
+            </div>
+            <span *ngIf="area(order) as area"><bdi>{{ area }}</bdi></span>
+            <span class="landmark" *ngIf="order.landmark?.trim()">
+              <i class="bi bi-signpost-2"></i><bdi>{{ order.landmark.trim() }}</bdi>
+            </span>
+            <a class="stop-btn" [href]="mapHref(order)" target="_blank" rel="noopener">
+              <i class="bi bi-map"></i>{{ 'orders.openMap' | translate }}
+            </a>
+          </div>
+        </li>
+      </ol>
+
+      <div class="items">
+        <h4>{{ 'orders.items' | translate }} <em>{{ itemCount(order) }}</em></h4>
+        <ul>
+          <li *ngFor="let item of order.items">
+            <span class="qty">{{ item.quantity }}×</span>
+            <span class="item-name">
+              <b dir="auto">{{ productName(item) }}</b>
+              <small dir="auto" *ngIf="variantName(item) as variant">{{ variant }}</small>
+            </span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="receipt" [class.paid]="order.paymentStatus === 1">
+        <div class="line">
+          <span>{{ 'orders.subtotal' | translate }}</span>
+          <span>{{ money(order.totalAmount - (order.deliveryFee || 0)) }}</span>
+        </div>
+        <div class="line" *ngIf="order.deliveryFee">
+          <span>{{ 'orders.delivery' | translate }}</span>
+          <span>{{ money(order.deliveryFee) }}</span>
+        </div>
+        <div class="total">
+          <div class="total-label">
+            <span>{{ 'orders.collect' | translate }}</span>
+            <small class="pay">
+              <i class="bi" [ngClass]="isCash(order) ? 'bi-cash-coin' : 'bi-credit-card'"></i>
+              {{ order.paymentStatus === 1 ? ('orders.paidOnline' | translate) : paymentLabel(order) }}
+            </small>
+          </div>
+          <b>{{ money(order.paymentStatus === 1 ? 0 : order.amountToCollect) }} <em>{{ 'orders.currency' | translate }}</em></b>
+        </div>
+      </div>
+
+      <div class="confirm" *ngIf="cancelPromptId === order.id">
+        <p>{{ 'orders.cancelHint' | translate }}</p>
+        <div>
+          <button type="button" class="danger" (click)="confirmCancel(order)">{{ 'orders.confirmCancel' | translate }}</button>
+          <button type="button" class="ghost-btn" (click)="dismissCancel()">{{ 'orders.back' | translate }}</button>
+        </div>
+      </div>
+
+      <footer class="actions" *ngIf="cancelPromptId !== order.id">
+        <button
+          type="button"
+          class="go"
+          *ngIf="primaryAction(order) as next"
+          [ngClass]="'tone-' + next"
+          [disabled]="updatingId === order.id"
+          (click)="requestStatus(order, next)"
+        >
+          <i class="bi" [ngClass]="updatingId === order.id ? 'bi-arrow-repeat spin' : statusIcon(next)"></i>
+          {{ 'orders.action.' + next | translate }}
+        </button>
+        <p class="final" *ngIf="!primaryAction(order)">
+          {{ 'orders.finalNote.' + order.status | translate }}
+        </p>
+
+        <div class="more">
+          <button
+            type="button"
+            class="kebab"
+            [disabled]="updatingId === order.id"
+            (click)="toggleMenu(order, $event)"
+            [attr.aria-label]="'orders.more' | translate"
+            [attr.aria-expanded]="menuOpenId === order.id"
+          >
+            <i class="bi bi-three-dots-vertical"></i>
+          </button>
+          <div class="menu" *ngIf="menuOpenId === order.id" (click)="$event.stopPropagation()">
+            <button
+              type="button"
+              *ngFor="let status of otherActions(order)"
+              [ngClass]="'tone-' + status"
+              (click)="requestStatus(order, status)"
+            >
+              <i class="dot"></i>
+              {{ 'orders.status.' + status | translate }}
+            </button>
+          </div>
+        </div>
+      </footer>
+    </article>
+  </div>
+</section>

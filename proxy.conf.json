@@ -1,0 +1,7 @@
+{
+  "/api": {
+    "target": "https://alhendalcompany-001-site1.stempurl.com",
+    "secure": true,
+    "changeOrigin": true
+  }
+}

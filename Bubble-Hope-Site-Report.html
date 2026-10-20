@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bubble Hope — تقرير السايت</title>
+  <style>
+    :root {
+      --ink: #1e293b;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --cream: #fffbf5;
+      --orange: #ff7304;
+      --card: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+      color: var(--ink);
+      background: var(--cream);
+      line-height: 1.6;
+    }
+    .wrap { max-width: 920px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+    h1 { font-size: 1.85rem; margin: 0 0 0.4rem; }
+    h2 { font-size: 1.25rem; margin: 2.2rem 0 0.75rem; color: var(--orange); }
+    h3 { font-size: 1.05rem; margin: 1.4rem 0 0.5rem; }
+    p, li { color: var(--ink); }
+    .muted { color: var(--muted); font-size: 0.92rem; }
+    .meta { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+    .pill {
+      display: inline-block;
+      padding: 0.2rem 0.65rem;
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid var(--line);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.75rem;
+      margin: 1.25rem 0;
+    }
+    .stat {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0.9rem;
+      text-align: center;
+    }
+    .stat b { display: block; font-size: 1.6rem; color: var(--orange); }
+    .note {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-right: 4px solid var(--orange);
+      border-radius: 10px;
+      padding: 0.9rem 1rem;
+      margin: 1rem 0;
+    }
+    .warn { border-right-color: #d97706; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; }
+    .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.85rem; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0.9rem 1rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      font-size: 0.92rem;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 0.5rem 0.65rem;
+      text-align: start;
+      vertical-align: top;
+    }
+    th { background: #fff7ed; }
+    tr:nth-child(even) td { background: #fafafa; }
+    code { font-family: Consolas, monospace; font-size: 0.86em; }
+    .print-btn {
+      position: sticky;
+      top: 0.75rem;
+      float: left;
+      direction: ltr;
+      background: var(--orange);
+      color: #fff;
+      border: 0;
+      border-radius: 999px;
+      padding: 0.55rem 1rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    @media (max-width: 720px) {
+      .stats, .grid2, .grid3 { grid-template-columns: 1fr; }
+    }
+    @media print {
+      .print-btn { display: none; }
+      body { background: #fff; }
+      .wrap { padding: 0; }
+      a { color: inherit; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <button class="print-btn" onclick="window.print()">حفظ PDF / طباعة</button>
+
+    <div class="meta">
+      <span class="pill">Frontend inventory</span>
+      <span class="pill">19 Oct 2026</span>
+    </div>
+    <h1>Bubble Hope — تقرير السايت</h1>
+    <p class="muted">جرد كامل للفرونت إند (Angular 16) مقابل الـ API الحي. المصدر: كود المستودع bubblehopemainsite.</p>
+
+    <div class="stats">
+      <div class="stat"><b>47</b> Angular components</div>
+      <div class="stat"><b>57</b> API methods</div>
+      <div class="stat"><b>34</b> Defined routes</div>
+      <div class="stat"><b>3</b> Branches in UI</div>
+    </div>
+
+    <div class="note">
+      <strong>إيه السايت ده.</strong>
+      Bubble Hope هو ستور بابل تي مصري: منيو مشروبات حسب الفرع، خامات (Powders / Syrup / Popping / Sauce)، كارت وتشيك أوت، Kids Area، وفعاليات.
+      الدومين العام bubblehope.com والـ API على alhendalcompany-001-site1.stempurl.com.
+      المخزون والأسعار جاية من الفرع المختار، مش من كتالوج ثابت.
+    </div>
+
+    <h2>الهوية</h2>
+    <table>
+      <tr><th>Field</th><th>Value</th></tr>
+      <tr><td>Brand</td><td>Bubble Hope</td></tr>
+      <tr><td>Repo / npm name</td><td>mainbubblehope</td></tr>
+      <tr><td>Public site</td><td><a href="https://bubblehope.com">https://bubblehope.com</a></td></tr>
+      <tr><td>API base</td><td>https://alhendalcompany-001-site1.stempurl.com</td></tr>
+      <tr><td>Tea sister shop</td><td><a href="https://t4tea.shop">https://t4tea.shop</a></td></tr>
+      <tr><td>WhatsApp</td><td>+20 100 676 7722</td></tr>
+      <tr><td>Languages</td><td>English + Arabic (ngx-translate)</td></tr>
+      <tr><td>Body typeface</td><td>Grandstander</td></tr>
+      <tr><td>App chrome typeface</td><td>Nunito (menu / cart / checkout titles)</td></tr>
+      <tr><td>Brand orange</td><td>#ff7304 / #ff7f00 / #f47524</td></tr>
+      <tr><td>Page cream</td><td>#fffbf5</td></tr>
+    </table>
+
+    <h2>الستاك</h2>
+    <div class="grid2">
+      <div class="card">
+        <h3>Runtime</h3>
+        <ul>
+          <li>Angular 16.2 (NgModule)</li>
+          <li>TypeScript 5.1 · RxJS 7.8 · Zone.js 0.13</li>
+          <li>Bootstrap 5.3 + ng-bootstrap 15</li>
+          <li>Tailwind 3.4 + SCSS</li>
+          <li>GSAP 3.15</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Integrations</h3>
+        <ul>
+          <li>HTTP API + Auth bearer interceptor</li>
+          <li>Firebase Auth — phone OTP</li>
+          <li>Paymob — CreateOrderPaymob + callback</li>
+          <li>Cloudinary — product image cutouts</li>
+          <li>ngx-translate · ngx-toastr · Owl carousel</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>توزيع الصفحات</h2>
+    <p class="muted">Source: src/app/app-routing.module.ts</p>
+    <p>Public (main layout): 23 · Auth-guarded shop: 6 · Auth layout: 5</p>
+    <p>الـ authGuard بيبص على <code>localStorage.token</code> فقط. من غير توكن: تحويل لـ <code>/auth/login</code>. الكارت، الويشليست، التشيك أوت، الأوردرز، البروفايل، وpayment pending مقفولين. تفاصيل المنتج والخامات مفتوحة.</p>
+
+    <h2>الرواتس</h2>
+    <table>
+      <tr><th>Path</th><th>Screen</th><th>Access</th></tr>
+      <tr><td>/home</td><td>Home</td><td>Public</td></tr>
+      <tr><td>/products</td><td>Drinks menu + filters</td><td>Public</td></tr>
+      <tr><td>/products/:id</td><td>Drinks by category</td><td>Public</td></tr>
+      <tr><td>/productdetails/:name</td><td>Drink details</td><td>Public</td></tr>
+      <tr><td>/tapioca /powders</td><td>Powders (category 21)</td><td>Public</td></tr>
+      <tr><td>/juice</td><td>Syrup (category 20)</td><td>Public</td></tr>
+      <tr><td>/popping</td><td>Popping (category 22)</td><td>Public</td></tr>
+      <tr><td>/sauce</td><td>Sauce (no live API category)</td><td>Public</td></tr>
+      <tr><td>/rawmaterialdetails/:name</td><td>Ingredient details</td><td>Public</td></tr>
+      <tr><td>/kids-area</td><td>Kids Area booking</td><td>Public</td></tr>
+      <tr><td>/bubble-events</td><td>Parties &amp; events</td><td>Public</td></tr>
+      <tr><td>/aboutus</td><td>About</td><td>Public</td></tr>
+      <tr><td>/cart</td><td>Cart</td><td>Login</td></tr>
+      <tr><td>/checkout</td><td>Checkout · Paymob</td><td>Login</td></tr>
+      <tr><td>/wishlist</td><td>Favorites</td><td>Login</td></tr>
+      <tr><td>/profile</td><td>Profile + addresses</td><td>Login</td></tr>
+      <tr><td>/allorders</td><td>Order history</td><td>Login</td></tr>
+      <tr><td>/payment/callback</td><td>Paymob return</td><td>Public</td></tr>
+      <tr><td>/payment/pending</td><td>Payment pending</td><td>Login</td></tr>
+      <tr><td>/auth/login|register|forget|reset</td><td>Account</td><td>Public</td></tr>
+    </table>
+
+    <h2>الهوم — ترتيب السكاشن</h2>
+    <table>
+      <tr><th>#</th><th>Component</th><th>What it loads</th></tr>
+      <tr><td>1</td><td>hero-banner</td><td>Branch-aware hero + GSAP</td></tr>
+      <tr><td>2</td><td>main-categories</td><td>Drink categories (group 1)</td></tr>
+      <tr><td>3</td><td>anytime-clock</td><td>Time-of-day drink picker</td></tr>
+      <tr><td>4</td><td>image-carousel</td><td>Stock / product photography</td></tr>
+      <tr><td>5</td><td>best-sellers</td><td>GetBestSellerProducts</td></tr>
+      <tr><td>6</td><td>mobile-advertise</td><td>App store promo</td></tr>
+      <tr><td>7</td><td>materials-section</td><td>Raw materials (group 2)</td></tr>
+      <tr><td>8</td><td>kids-area-section</td><td>Kids Area teaser</td></tr>
+      <tr><td>9</td><td>bubble-events-section</td><td>Events teaser</td></tr>
+      <tr><td>10</td><td>trainning</td><td>Barista training CTA</td></tr>
+      <tr><td>11</td><td>contact</td><td>POST /api/ContactUs</td></tr>
+    </table>
+    <p class="muted">Ramadan section موجود في الكود ومتعطّل في home.component.html.</p>
+
+    <h2>الكتالوج</h2>
+    <div class="grid2">
+      <div class="card">
+        <h3>Drinks · groupCategoryId = 1</h3>
+        <p>المخزون من Stock/GetProductsForBranch. الأسعار والأوفر ستوك مربوطين بالفرع. الكروت فيها قلب، سعر متحرك، وAdd لما stock &gt; 0.</p>
+      </div>
+      <div class="card">
+        <h3>Ingredients · groupCategoryId = 2</h3>
+        <p>Powders=21 · Syrup/Juice=20 · Popping=22. Sauce مفيش id من الداشبورد — الفرونت بيمشي بالـ titleKey. كتير من منتجات الجروب 2 سعرهم 0 وOut of Stock لو الفرع مالوش ستوك.</p>
+      </div>
+    </div>
+
+    <h3>خريطة الخامات</h3>
+    <table>
+      <tr><th>Nav label</th><th>Route</th><th>Category id</th><th>Notes</th></tr>
+      <tr><td>Powders</td><td>/tapioca (alias /powders)</td><td>21</td><td>مساحيق / تابيوكا</td></tr>
+      <tr><td>Syrup</td><td>/juice</td><td>20</td><td>شراب / عصير</td></tr>
+      <tr><td>Popping</td><td>/popping</td><td>22</td><td>بوبا</td></tr>
+      <tr><td>Sauce</td><td>/sauce</td><td>—</td><td>Match by name, not API id</td></tr>
+      <tr><td>Waffle sauce / mix</td><td>/waffle-sauce · /waffle-mix</td><td>hub</td><td>RawMaterialCategoriesComponent</td></tr>
+    </table>
+
+    <h2>الفروع</h2>
+    <table>
+      <tr><th>UI name</th><th>Arabic</th><th>Notes</th></tr>
+      <tr><td>Hadayek Al Ahram</td><td>حدائق الأهرام</td><td>Default / first branch in many flows</td></tr>
+      <tr><td>Fuel Up Station</td><td>فيول أب</td><td>Dahshour key in i18n</td></tr>
+      <tr><td>Zewail Branch</td><td>زويل</td><td>Zewail City</td></tr>
+    </table>
+    <p>الفرع بيتخزن في localStorage (<code>br</code>) وفي BranchService. مودال الاختيار بيظهر أول زيارة. المنتجات والأسعار والكارت كلها branch-scoped.</p>
+
+    <h2>APIs حسب الدومين</h2>
+    <p class="muted">Source: src/app/services/api.service.ts</p>
+    <table>
+      <tr><th>Domain</th><th>Methods</th></tr>
+      <tr><td>Account</td><td>8</td></tr>
+      <tr><td>Products / stock</td><td>9</td></tr>
+      <tr><td>Cart</td><td>6</td></tr>
+      <tr><td>Kids Area</td><td>4</td></tr>
+      <tr><td>Orders / pay</td><td>5</td></tr>
+      <tr><td>Favourites</td><td>3</td></tr>
+      <tr><td>Addresses / location</td><td>7</td></tr>
+      <tr><td>Branch</td><td>4</td></tr>
+      <tr><td>Categories</td><td>4</td></tr>
+      <tr><td>Ads / contact / flags</td><td>7</td></tr>
+    </table>
+
+    <h3>Account &amp; auth</h3>
+    <table>
+      <tr><th>Method</th><th>Endpoint</th></tr>
+      <tr><td>GetUserId</td><td>GET /api/Account/getUserId</td></tr>
+      <tr><td>getUserDetails</td><td>GET /api/Account/getUserDetails/:id</td></tr>
+      <tr><td>updateProfile</td><td>PUT /api/Account/update-profile</td></tr>
+      <tr><td>forgot / reset password</td><td>POST /api/Account/forgotPassword · resetPassword</td></tr>
+      <tr><td>confirm / reject email</td><td>GET /api/Account/confirmEmail · rejectEmail</td></tr>
+      <tr><td>resend confirmation</td><td>POST /api/Account/resend-confirmation</td></tr>
+      <tr><td>phone login</td><td>POST /api/Account/firebase/phone-login</td></tr>
+    </table>
+
+    <h3>Catalog, stock, cart, orders</h3>
+    <table>
+      <tr><th>Domain</th><th>Key endpoints</th></tr>
+      <tr><td>Stock</td><td>GetProductsForBranch · GetProducts</td></tr>
+      <tr><td>Products</td><td>GetProductById · GetProductByName · GetBestSellerProducts · GetGroupedProductsWithStock</td></tr>
+      <tr><td>Categories</td><td>GetAllCategories · GetAllCategoriesWithProducts · GetCategoryBySlug</td></tr>
+      <tr><td>Cart</td><td>GetOrCreateCart · GetCartByUserId · Add/Update/Delete CartItem · ClearCart</td></tr>
+      <tr><td>Orders</td><td>CreateOrder · CreateOrderPaymob · GetOrdersByUserId · CancelOrder</td></tr>
+      <tr><td>Discounts</td><td>GetDiscountByCode · CheckDiscountAvailability</td></tr>
+    </table>
+
+    <h2>الخدمات المحلية (14)</h2>
+    <table>
+      <tr><th>Service</th><th>Role</th></tr>
+      <tr><td>ApiService</td><td>كل الـ HTTP للباك إند</td></tr>
+      <tr><td>AuthService</td><td>توكن / لوجين / لوج آوت</td></tr>
+      <tr><td>TokenService</td><td>تخزين التوكن</td></tr>
+      <tr><td>BranchService</td><td>الفرع الحالي + مودال الاختيار</td></tr>
+      <tr><td>LanguageService</td><td>en / ar + dir</td></tr>
+      <tr><td>CartService / CartCountService</td><td>كارت وعدّاد النافبار</td></tr>
+      <tr><td>WishlistCountService</td><td>عدّاد المفضلة</td></tr>
+      <tr><td>RawCategoriesService</td><td>جروب 2 + Cloudinary cutout</td></tr>
+      <tr><td>SeoService / TitleService / MetaService</td><td>عنوان ووصف الصفحات</td></tr>
+      <tr><td>LoadingService</td><td>البريلودر عبر interceptor</td></tr>
+      <tr><td>PhoneAuthService</td><td>Firebase OTP</td></tr>
+    </table>
+
+    <h2>الترجمة</h2>
+    <p>ملفين: <code>src/assets/i18n/en.json</code> و <code>ar.json</code>. الأقسام: common, auth, branchModal, home, materials, navbar, aboutus, wishlist, cart, Products, orders, profile, delivery, footer, productDetails, kidsArea, bubbleEvents, training, RAMADAN.</p>
+
+    <h2>الدفع والتنفيذ</h2>
+    <div class="grid3">
+      <div class="card"><h3>Fulfillment</h3><p>Home delivery أو self-pickup من الفرع. البيك أب من غير رسوم توصيل.</p></div>
+      <div class="card"><h3>Payment</h3><p>GetAllPaymentMethods + CreateOrderPaymob. رجوع على /payment/callback.</p></div>
+      <div class="card"><h3>Addresses</h3><p>Country → Governorate → City → District من Location API.</p></div>
+    </div>
+
+    <h2>سوشيال وروابط خارجية</h2>
+    <table>
+      <tr><th>Channel</th><th>Target</th></tr>
+      <tr><td>Facebook</td><td>facebook.com/profile.php?id=100083979669498</td></tr>
+      <tr><td>TikTok</td><td>tiktok.com/@bubblehope.eg</td></tr>
+      <tr><td>Instagram</td><td>instagram.com/bubblehope.eg</td></tr>
+      <tr><td>WhatsApp</td><td>wa.me/201006767722</td></tr>
+      <tr><td>Teas</td><td>https://t4tea.shop/home</td></tr>
+    </table>
+
+    <h2>ملاحظات تشغيل مهمة</h2>
+    <div class="note warn"><strong>خامات من غير ستوك.</strong> منتجات group 2 غالباً stock=0 في الفرع، فالكارت بيظهر Out of Stock والتفاصيل بتمنع الإضافة. السعر 0 LE لحد ما الداشبورد يحط ستوك.</div>
+    <div class="note"><strong>Sauce.</strong> مفيش category id من الـ API. الراوت /sauce والنافبار بيطابقوا الاسم مش رقم.</div>
+    <div class="note"><strong>On/Off.</strong> IsMainsiteOn موجود، وكمبوننت pending-site متعطّل حالياً فالموقع دايماً مفتوح من الفرونت.</div>
+
+    <p class="muted">Snapshot from F:/bubblehope/bubblehopemainsite · Angular 16 mainbubblehope · 19 Oct 2026. أرقام المنتجات الحية مش هنا لأنها بتتغيّر حسب الفرع.</p>
+  </div>
+</body>
+</html>

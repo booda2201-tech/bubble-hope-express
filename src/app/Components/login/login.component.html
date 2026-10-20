@@ -1,0 +1,62 @@
+<form class="card" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <div class="card-head">
+    <span class="badge"><i class="bi bi-scooter"></i></span>
+    <div>
+      <h2>{{ 'login.title' | translate }}</h2>
+      <p>{{ 'login.hint' | translate }}</p>
+    </div>
+  </div>
+
+  <label class="field" [class.invalid]="form.controls.phoneNumber.touched && form.controls.phoneNumber.invalid">
+    <span class="label">{{ 'login.phone' | translate }}</span>
+    <span class="control">
+      <i class="bi bi-phone"></i>
+      <input
+        type="tel"
+        formControlName="phoneNumber"
+        inputmode="tel"
+        autocomplete="username"
+        placeholder="01X XXXX XXXX"
+      />
+    </span>
+    <small *ngIf="form.controls.phoneNumber.touched && form.controls.phoneNumber.invalid">
+      {{ 'login.phoneInvalid' | translate }}
+    </small>
+  </label>
+
+  <label class="field" [class.invalid]="form.controls.password.touched && form.controls.password.invalid">
+    <span class="label">{{ 'login.password' | translate }}</span>
+    <span class="control with-action">
+      <i class="bi bi-lock"></i>
+      <input
+        [type]="showPassword ? 'text' : 'password'"
+        formControlName="password"
+        autocomplete="current-password"
+        placeholder="••••••••"
+      />
+      <button
+        type="button"
+        class="eye"
+        (click)="showPassword = !showPassword"
+        [attr.aria-label]="'login.togglePassword' | translate"
+      >
+        <i class="bi" [class.bi-eye]="!showPassword" [class.bi-eye-slash]="showPassword"></i>
+      </button>
+    </span>
+    <small *ngIf="form.controls.password.touched && form.controls.password.invalid">
+      {{ 'login.passwordRequired' | translate }}
+    </small>
+  </label>
+
+  <p class="alert" *ngIf="errorMessage" role="alert">
+    <i class="bi bi-exclamation-circle-fill"></i>
+    {{ errorMessage }}
+  </p>
+
+  <button class="cta" type="submit" [disabled]="submitting">
+    <span>{{ (submitting ? 'login.submitting' : 'login.submit') | translate }}</span>
+    <span class="cta-icon" [class.spin]="submitting">
+      <i class="bi" [class.bi-arrow-up-left]="!submitting" [class.bi-arrow-repeat]="submitting"></i>
+    </span>
+  </button>
+</form>

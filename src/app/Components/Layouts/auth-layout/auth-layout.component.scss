@@ -1,0 +1,195 @@
+.auth {
+  position: relative;
+  min-height: 100dvh;
+  overflow: hidden;
+  background: linear-gradient(165deg, var(--cream) 0%, #fff6eb 48%, var(--orange-soft) 100%);
+}
+
+.sky {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: 0.55;
+
+  &--teal {
+    width: 46vmax;
+    height: 46vmax;
+    top: -18vmax;
+    inset-inline-start: -12vmax;
+    background: radial-gradient(circle, #c8ebf1 0%, var(--teal) 70%);
+  }
+
+  &--orange {
+    width: 40vmax;
+    height: 40vmax;
+    bottom: -20vmax;
+    inset-inline-end: -10vmax;
+    background: radial-gradient(circle, #ffe0b0 0%, var(--orange) 70%);
+  }
+}
+
+.b1 { width: 54px; height: 54px; top: 18%; inset-inline-end: 46%; }
+.b2 { width: 34px; height: 34px; top: 70%; inset-inline-start: 6%; animation-delay: -2s; }
+.b3 { width: 22px; height: 22px; top: 12%; inset-inline-start: 18%; animation-delay: -4s; }
+.b4 { width: 28px; height: 28px; bottom: 9%; inset-inline-end: 40%; animation-delay: -1s; }
+.b5 { width: 16px; height: 16px; top: 40%; inset-inline-end: 6%; animation-delay: -3s; }
+
+.auth-top {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem clamp(1rem, 4vw, 3rem);
+}
+
+.logo {
+  height: 58px;
+  filter: drop-shadow(0 8px 14px rgba(36, 58, 99, 0.18));
+}
+
+.lang {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.55rem 1rem;
+  background: var(--glass);
+  backdrop-filter: blur(10px);
+  color: var(--navy);
+  font-weight: 800;
+  box-shadow: var(--shadow-soft);
+  transition: transform 0.25s var(--ease-bounce);
+
+  &:hover { transform: translateY(-2px); }
+}
+
+.stage {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  align-items: center;
+  gap: clamp(1.5rem, 4vw, 4rem);
+  max-width: 1220px;
+  margin: 0 auto;
+  padding: 0 clamp(1rem, 4vw, 3rem) 3rem;
+  min-height: calc(100dvh - 100px);
+}
+
+.pitch {
+  position: relative;
+  animation: bh-rise 0.7s var(--ease-bounce) both;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  background: var(--navy);
+  color: var(--sunny-soft);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  box-shadow: var(--shadow-pop);
+}
+
+h1 {
+  position: relative;
+  margin: 1.1rem 0 0.8rem;
+  font-family: var(--font-display);
+  font-weight: 900;
+  line-height: 1.02;
+  font-size: clamp(2.6rem, 6vw, 4.8rem);
+  color: var(--navy);
+}
+
+.ghost {
+  position: absolute;
+  inset-inline-start: -0.06em;
+  top: -0.55em;
+  font-size: 1.5em;
+  color: transparent;
+  -webkit-text-stroke: 2px rgba(36, 58, 99, 0.08);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  z-index: -1;
+}
+
+.line { display: block; }
+
+.accent {
+  background: linear-gradient(90deg, var(--orange) 0%, #ff9a4a 42%, #3ec4d6 80%, var(--teal) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  padding-bottom: 0.08em;
+}
+
+.pitch p {
+  max-width: 30rem;
+  margin: 0;
+  color: rgba(36, 58, 99, 0.72);
+  font-size: 1.08rem;
+  font-weight: 700;
+  line-height: 1.7;
+}
+
+.cups {
+  position: relative;
+  margin-top: 1rem;
+  max-width: 460px;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 18% 14% 4%;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 195, 64, 0.55), transparent 70%);
+    filter: blur(20px);
+  }
+
+  img {
+    position: relative;
+    width: 100%;
+    animation: bh-float 6s ease-in-out infinite;
+    filter: drop-shadow(0 30px 30px rgba(36, 58, 99, 0.22));
+  }
+}
+
+.panel {
+  animation: bh-rise 0.7s 0.12s var(--ease-bounce) both;
+}
+
+@media (max-width: 920px) {
+  .stage {
+    grid-template-columns: 1fr;
+    min-height: auto;
+    padding-top: 0.5rem;
+  }
+
+  .pitch { text-align: center; }
+  .pitch p { margin-inline: auto; }
+  .ghost { display: none; }
+
+  .cups {
+    max-width: 230px;
+    margin: 0.5rem auto -2.5rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .logo { height: 46px; }
+  .pitch p { display: none; }
+  h1 { font-size: 2.35rem; }
+}
