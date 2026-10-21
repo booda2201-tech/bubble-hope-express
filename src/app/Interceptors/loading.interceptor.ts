@@ -13,7 +13,7 @@ export class LoadingInterceptor implements HttpInterceptor {
   constructor(private loading: LoadingService) {}
 
   intercept(req: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
-    const skip = req.headers.has('X-Skip-Loading') || req.url.includes('/assets/');
+    const skip = req.headers.has('X-Skip-Loading') || req.url.includes('assets/');
     const clean = req.clone({ headers: req.headers.delete('X-Skip-Loading') });
     if (skip) return next.handle(clean);
 

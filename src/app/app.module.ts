@@ -17,7 +17,7 @@ import { OrdersComponent } from './Components/orders/orders.component';
 import { PreloaderComponent } from './Components/preloader/preloader.component';
 
 export function HttpLoaderFactory(http: HttpClient): TranslateHttpLoader {
-  return new TranslateHttpLoader(http, '/assets/i18n/', '.json');
+  return new TranslateHttpLoader(http, 'assets/i18n/', '.json');
 }
 
 @NgModule({

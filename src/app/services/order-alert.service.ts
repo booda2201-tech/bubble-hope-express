@@ -9,7 +9,8 @@ export interface OrderAlert {
 type PermissionState = NotificationPermission | 'unsupported';
 
 const STORAGE_KEY = 'order_alerts';
-const ICON = '/assets/brand/logo.png';
+/** Resolved against <base href> so the app works when deployed under a sub-path like /driver/. */
+const ICON = new URL('assets/icons/icon-192.png', document.baseURI).href;
 
 /** One "ding-dong" round; each hit drives both a bell tone and a vibration burst so they land together. */
 const ROUND_MS = 1000;
@@ -53,7 +54,7 @@ export class OrderAlertService {
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker
-        .register('/assets/sw.js')
+        .register('sw.js', { scope: './' })
         .then((registration) => (this.registration = registration))
         .catch(() => (this.registration = null));
     }
