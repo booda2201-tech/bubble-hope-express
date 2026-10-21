@@ -70,6 +70,10 @@ export class OrdersComponent implements OnInit {
 
   ngOnInit(): void {
     this.load(false);
+    if (this.demoPending) {
+      this.demoPending = false;
+      this.scheduleDemoOrder();
+    }
     interval(30000)
       .pipe(
         filter(() => this.updatingId == null && !this.inFlight),
@@ -148,11 +152,7 @@ export class OrdersComponent implements OnInit {
           this.inFlight = false;
           this.loading = false;
           this.primed = true;
-          if (!silent) this.loadError = succeeded === 0;
-          if (this.demoPending) {
-            this.demoPending = false;
-            this.scheduleDemoOrder();
-          }
+          if (!silent) this.loadError = succeeded === 0 && !this.orders.length;
         },
       });
   }
