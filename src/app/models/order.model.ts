@@ -40,6 +40,13 @@ export interface DeliveryOrder {
   branchAddress: string | null;
   branchAddressAr: string | null;
   branchPhone: string | null;
+  /** Optional pins; when the API sends them, navigation uses them instead of the address text. */
+  latitude?: number | string | null;
+  longitude?: number | string | null;
+  locationUrl?: string | null;
+  branchLatitude?: number | string | null;
+  branchLongitude?: number | string | null;
+  branchLocationUrl?: string | null;
   totalAmount: number;
   deliveryFee: number;
   paymentMethod: string;

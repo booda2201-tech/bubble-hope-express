@@ -431,12 +431,30 @@ html[dir="rtl"] .who span { text-align: right; }
   color: var(--teal-deep);
 }
 
+.stop-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.45rem;
+}
+
+.stop-body .approx {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.3rem;
+  color: #b7791f;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.4;
+
+  &.good { color: var(--teal-deep); }
+}
+
 .stop-btn {
-  justify-self: start;
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  margin-top: 0.45rem;
   padding: 0.4rem 0.8rem;
   border: 1px solid var(--border);
   border-radius: 999px;

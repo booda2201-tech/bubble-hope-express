@@ -120,9 +120,14 @@
             <small>{{ (isDelivery(order) ? 'orders.pickFrom' : 'orders.pickup') | translate }}</small>
             <b dir="auto">{{ branchName(order) || ('orders.branchLabel' | translate) }}</b>
             <span dir="auto" *ngIf="branchAddress(order) as address">{{ address }}</span>
-            <a class="stop-btn" *ngIf="order.branchPhone" [href]="branchCallHref(order)">
-              <i class="bi bi-telephone-fill"></i>{{ 'orders.callBranch' | translate }}
-            </a>
+            <div class="stop-btns">
+              <a class="stop-btn" [href]="branchMapHref(order)" target="_blank" rel="noopener">
+                <i class="bi bi-sign-turn-right-fill"></i>{{ 'orders.navigate' | translate }}
+              </a>
+              <a class="stop-btn" *ngIf="order.branchPhone" [href]="branchCallHref(order)">
+                <i class="bi bi-telephone-fill"></i>{{ 'orders.callBranch' | translate }}
+              </a>
+            </div>
           </div>
         </li>
         <li class="stop stop--drop" *ngIf="isDelivery(order)">
@@ -139,9 +144,14 @@
             <span class="landmark" *ngIf="order.landmark?.trim()">
               <i class="bi bi-signpost-2"></i><bdi>{{ order.landmark.trim() }}</bdi>
             </span>
-            <a class="stop-btn" [href]="mapHref(order)" target="_blank" rel="noopener">
-              <i class="bi bi-map"></i>{{ 'orders.openMap' | translate }}
-            </a>
+            <div class="stop-btns">
+              <a class="stop-btn" [href]="mapHref(order)" target="_blank" rel="noopener">
+                <i class="bi bi-sign-turn-right-fill"></i>{{ 'orders.navigate' | translate }}
+              </a>
+            </div>
+            <small class="approx" *ngIf="!hasExactPin(order)">
+              <i class="bi bi-info-circle"></i>{{ 'orders.navHint' | translate }}
+            </small>
           </div>
         </li>
       </ol>

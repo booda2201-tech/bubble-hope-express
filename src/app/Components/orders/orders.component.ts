@@ -4,14 +4,20 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TranslateService } from '@ngx-translate/core';
 import { ToastrService } from 'ngx-toastr';
 import { catchError, filter, from, interval, map, mergeMap, of } from 'rxjs';
+import { branchLocation } from '../../config/branches';
 import { environment } from '../../Environments/environment';
 import { DeliveryOrder, OrderItem, OrderStatus } from '../../models/order.model';
 import { ApiService } from '../../services/api.service';
 import { OrderAlertService } from '../../services/order-alert.service';
 import {
+  coordinates,
   dialPhone,
+  directionsUrl,
   formatClock,
+  isMapLink,
   pickLocalized,
+  unitNumber,
+  zoneLetter,
 } from '../../utils/order-format';
 
 type Tab = 'active' | 'done';
@@ -190,8 +196,7 @@ export class OrdersComponent implements OnInit {
     const kept = this.orders.filter((order) => order.id < 0 || order.createdAt.slice(0, 10) !== day);
     this.orders = [...kept, ...incoming].sort(
       (a, b) => a.createdAt.localeCompare(b.createdAt)
-    );
-  }
+    );  }
 
   statusIcon(status: number): string {
     return STATUS_ICONS[status] ?? 'bi-circle';
@@ -275,11 +280,11 @@ export class OrdersComponent implements OnInit {
   /** Building / floor / apartment kept as separate chips so mixed Arabic-Latin values never reorder. */
   unitParts(order: DeliveryOrder): { label: string; value: string }[] {
     return [
-      { label: 'orders.building', value: order.buildingNumber },
-      { label: 'orders.floor', value: order.floor },
-      { label: 'orders.apartment', value: order.apartment },
+      { label: 'orders.building', value: unitNumber(this.lang, order.buildingNumber) },
+      { label: 'orders.floor', value: (order.floor || '').trim() },
+      { label: 'orders.apartment', value: unitNumber(this.lang, order.apartment) },
     ]
-      .map((part) => ({ label: this.translate.instant(part.label), value: (part.value || '').trim() }))
+      .map((part) => ({ label: this.translate.instant(part.label), value: part.value }))
       .filter((part) => part.value);
   }
 
@@ -299,18 +304,28 @@ export class OrdersComponent implements OnInit {
     return (order.fullName || '').trim().charAt(0).toUpperCase() || '؟';
   }
 
+  /** Pin from the API > shared Maps link > Google's own search on the full typed address. */
   mapHref(order: DeliveryOrder): string {
-    const query = [
-      order.street,
-      order.buildingNumber,
-      pickLocalized(this.lang, order.district, order.districtAr),
-      pickLocalized(this.lang, order.city, order.cityAr),
-      pickLocalized(this.lang, order.governorate, order.governorateAr),
-    ]
-      .map((part) => (part || '').trim())
-      .filter(Boolean)
-      .join(', ');
-    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+    const pin = coordinates(order.latitude, order.longitude);
+    if (pin) return directionsUrl(pin);
+    if (isMapLink(order.locationUrl)) return order.locationUrl!.trim();
+    return directionsUrl(customerAddressQuery(order));
+  }
+
+  branchMapHref(order: DeliveryOrder): string {
+    const pin = coordinates(order.branchLatitude, order.branchLongitude);
+    if (pin) return directionsUrl(pin);
+    if (isMapLink(order.branchLocationUrl)) return order.branchLocationUrl!.trim();
+    const known = branchLocation(order);
+    if (known) return directionsUrl(`${known.lat},${known.lng}`);
+    const address = order.branchAddressAr || order.branchAddress;
+    return directionsUrl(
+      addressQuery(address ? [address] : ['Bubble Hope', order.branchNameAr || order.branchName])
+    );
+  }
+
+  hasExactPin(order: DeliveryOrder): boolean {
+    return !!coordinates(order.latitude, order.longitude) || isMapLink(order.locationUrl);
   }
 
   branchName(order: DeliveryOrder): string {
@@ -318,7 +333,11 @@ export class OrdersComponent implements OnInit {
   }
 
   branchAddress(order: DeliveryOrder): string {
-    return pickLocalized(this.lang, order.branchAddress, order.branchAddressAr);
+    const known = branchLocation(order);
+    return (
+      pickLocalized(this.lang, order.branchAddress, order.branchAddressAr) ||
+      pickLocalized(this.lang, known?.address, known?.addressAr)
+    );
   }
 
   branchCallHref(order: DeliveryOrder): string {
@@ -461,6 +480,35 @@ function buildDemoOrder(id: number): DeliveryOrder {
       },
     ],
   };
+}
+
+/**
+ * The whole typed address in the order Google reads Egyptian addresses best, Arabic first:
+ * "عمارة 4 ب، منطقة ب، الثروة المعدنية، حدائق الأهرام، الجيزة، مصر".
+ */
+function customerAddressQuery(order: DeliveryOrder): string {
+  const building = unitNumber('ar', order.buildingNumber);
+  const district = (order.districtAr || order.district || '').trim();
+  const street = (order.street || '').trim();
+  const zone = zoneLetter([order.districtAr, order.district, street, order.landmark], order.buildingNumber);
+  const zoneWritten = /منطق[ةه]|area|zone|block/i.test(`${district} ${street}`);
+  // The English street is often just the district retyped; the Arabic district already covers it.
+  const letters = (text: string | null | undefined) => (text || '').toLowerCase().replace(/[^a-z\u0621-\u064A]/g, '');
+  const sameAsDistrict = !!order.districtAr && !!street && letters(street) === letters(order.district);
+  return addressQuery([
+    building ? `عمارة ${building}` : '',
+    zone && !zoneWritten ? `منطقة ${zone}` : '',
+    sameAsDistrict ? '' : street,
+    district,
+    order.cityAr || order.city,
+    order.governorateAr || order.governorate,
+  ]);
+}
+
+/** Arabic place names plus the country geocode far more reliably in Egypt than mixed-language text. */
+function addressQuery(parts: (string | null | undefined)[]): string {
+  const cleaned = [...new Set(parts.map((part) => (part || '').trim()).filter(Boolean))];
+  return [...cleaned, 'مصر'].join('، ');
 }
 
 function isOpen(status: number): boolean {

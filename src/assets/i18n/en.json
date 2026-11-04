@@ -50,7 +50,8 @@
     "dropTo": "Deliver to customer",
     "demoTapHint": "Tap anywhere so the test order arrives with sound and vibration",
     "building": "Bldg",
-    "openMap": "Open map",
+    "navigate": "Navigate",
+    "navHint": "Google searches the full address — confirm the building number with the customer on arrival",
     "subtotal": "Order",
     "payment": {
       "cash": "Cash on delivery",
