@@ -15,7 +15,7 @@ export class ApiService {
 
   getOrdersByDate(date: string): Observable<DeliveryOrder[]> {
     return this.http
-      .get<unknown>(`${this.baseUrl}/api/Orders/GetOrdersByDate`, {
+      .get<unknown>(`${this.baseUrl}/api/Orders/GetDriverOrdersByDate`, {
         params: { date, _: String(Date.now()) },
         headers: this.skipLoading
           .set('Cache-Control', 'no-cache')
