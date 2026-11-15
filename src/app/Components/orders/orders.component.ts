@@ -54,6 +54,7 @@ export class OrdersComponent implements OnInit {
   loadError = false;
   updatingId: number | null = null;
   menuOpenId: number | null = null;
+  expandedId: number | null = null;
 
   private knownIds = new Set<number>();
   private knownStatus = new Map<number, number>();
@@ -121,6 +122,16 @@ export class OrdersComponent implements OnInit {
   @HostListener('document:click')
   closeMenus(): void {
     this.menuOpenId = null;
+  }
+
+  isExpanded(order: DeliveryOrder): boolean {
+    return this.expandedId === order.id;
+  }
+
+  toggleExpand(order: DeliveryOrder, event?: Event): void {
+    event?.stopPropagation();
+    this.menuOpenId = null;
+    this.expandedId = this.expandedId === order.id ? null : order.id;
   }
 
   get lang(): string {
