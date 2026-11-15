@@ -1,26 +1,45 @@
 <div class="shell">
   <header class="topbar">
     <div class="topbar-inner">
-      <a class="brand" routerLink="/orders">
-        <img src="assets/brand/logo.png" alt="Bubble Hope" />
-        <span class="express">{{ 'express' | translate }}</span>
+      <a class="brand" routerLink="/orders" [attr.aria-label]="'brand' | translate">
+        <img src="assets/brand/logo.png" alt="" />
+        <span class="brand-copy">
+          <b>{{ 'brand' | translate }}</b>
+          <em>{{ 'express' | translate }}</em>
+        </span>
       </a>
 
       <div class="tools">
-        <div class="driver" *ngIf="auth.driver$ | async as driver">
-          <span class="avatar"><i class="bi bi-person-fill"></i></span>
+        <div
+          class="driver"
+          *ngIf="auth.driver$ | async as driver"
+          [attr.title]="driver.fullName || driver.phoneNumber"
+        >
+          <span class="avatar" aria-hidden="true"><i class="bi bi-person-fill"></i></span>
           <span class="meta">
             <small>{{ 'driver' | translate }}</small>
-            <b dir="auto">{{ driver.fullName }}</b>
+            <b dir="auto">{{ driver.fullName || driver.phoneNumber }}</b>
           </span>
         </div>
 
-        <button type="button" class="chip" (click)="language.toggle()">
+        <button
+          type="button"
+          class="icon-chip"
+          (click)="language.toggle()"
+          [attr.aria-label]="'lang' | translate"
+          [attr.title]="'lang' | translate"
+        >
           <i class="bi bi-translate"></i>
           <span>{{ 'lang' | translate }}</span>
         </button>
 
-        <button type="button" class="chip out" (click)="logout()" [attr.aria-label]="'logout' | translate">
+        <button
+          type="button"
+          class="icon-chip out"
+          (click)="logout()"
+          [attr.aria-label]="'logout' | translate"
+          [attr.title]="'logout' | translate"
+        >
           <i class="bi bi-box-arrow-left flip"></i>
           <span class="label">{{ 'logout' | translate }}</span>
         </button>
