@@ -1,4 +1,5 @@
 import { Injectable, NgZone } from '@angular/core';
+import { PushService } from './push.service';
 
 export interface OrderAlert {
   id: number;
@@ -44,7 +45,7 @@ export class OrderAlertService {
   private baseTitle = document.title;
   private unseen = 0;
 
-  constructor(private zone: NgZone) {
+  constructor(private zone: NgZone, public push: PushService) {
     const unlock = () => this.zone.run(() => this.unlockAudio());
     document.addEventListener('pointerdown', unlock, { once: true, capture: true });
     document.addEventListener('keydown', unlock, { once: true, capture: true });
@@ -83,28 +84,34 @@ export class OrderAlertService {
       }
     }
     this.ring(1);
+    await this.push.sync();
   }
 
   disable(): void {
     this.enabled = false;
     localStorage.setItem(STORAGE_KEY, 'off');
+    void this.push.unsubscribe();
   }
 
   notify(alerts: OrderAlert[]): void {
     if (!this.enabled || !alerts.length) return;
 
-    this.ring(ALERT_ROUNDS);
-
-    if (document.visibilityState !== 'visible') {
+    const hidden = document.visibilityState !== 'visible';
+    if (hidden) {
       this.unseen += alerts.length;
       document.title = `(${this.unseen}) ${this.baseTitle}`;
+      // The service worker already rang and vibrated for this order via push.
+      if (this.push.active) return;
     }
 
+    this.ring(ALERT_ROUNDS);
+
     if (this.permission !== 'granted') return;
-    for (const alert of alerts.slice(0, 3)) this.showSystemNotification(alert);
+    for (const alert of alerts.slice(0, 3)) this.showSystemNotification(alert, !hidden);
   }
 
-  private showSystemNotification(alert: OrderAlert): void {
+  /** While the page is on screen the in-page bell already plays, so the system notification stays silent. */
+  private showSystemNotification(alert: OrderAlert, quiet: boolean): void {
     const options: NotificationOptions & { vibrate?: number[]; renotify?: boolean } = {
       body: alert.body,
       icon: ICON,
@@ -112,8 +119,8 @@ export class OrderAlertService {
       tag: `order-${alert.id}`,
       requireInteraction: true,
       renotify: true,
-      silent: false,
-      vibrate: vibrationPattern(ALERT_ROUNDS),
+      silent: quiet,
+      vibrate: quiet ? undefined : vibrationPattern(ALERT_ROUNDS),
     };
 
     if (this.registration) {

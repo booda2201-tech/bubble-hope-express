@@ -152,6 +152,43 @@
   font-weight: 600;
 }
 
+.check-card {
+  margin-top: 0.75rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--border, #ece6dd);
+  border-radius: 14px;
+  background: #fff;
+
+  h2 {
+    margin: 0 0 0.6rem;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--navy, #243a63);
+  }
+
+  dl { margin: 0; display: grid; gap: 0.35rem; }
+
+  dl > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px dashed #eee5d8;
+  }
+
+  dt { color: var(--text-2, #667085); font-size: 0.82rem; font-weight: 700; }
+  dd {
+    margin: 0;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-align: end;
+    word-break: break-all;
+  }
+
+  .good dd { color: #2f855a; }
+  .bad dd { color: #c53030; }
+}
+
 .refresh {
   flex: none;
   display: grid;
@@ -376,9 +413,26 @@ html[dir="rtl"] .who span { text-align: right; }
   border-radius: 50%;
   color: #fff;
   font-size: 0.95rem;
+  text-decoration: none;
 
   .stop--branch & { background: var(--teal-deep); }
   .stop--drop & { background: var(--orange); }
+}
+
+.branch-link {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: inherit;
+  text-decoration: none;
+
+  i {
+    color: var(--teal-deep);
+    font-size: 0.75rem;
+  }
+
+  &:hover b { text-decoration: underline; }
 }
 
 .stop-body {

@@ -43,6 +43,20 @@
     <i class="bi bi-info-circle"></i>
     {{ 'alerts.denied' | translate }}
   </p>
+  <p class="alert-denied" *ngIf="alerts.enabled && alerts.push.needsInstallOnIos">
+    <i class="bi bi-box-arrow-up"></i>
+    {{ 'alerts.iosInstall' | translate }}
+  </p>
+
+  <div class="check-card" *ngIf="showCheck">
+    <h2><i class="bi bi-clipboard-data"></i> Device check</h2>
+    <dl>
+      <div *ngFor="let row of checks" [class.bad]="row.ok === false" [class.good]="row.ok === true">
+        <dt>{{ row.label }}</dt>
+        <dd>{{ row.value }}</dd>
+      </div>
+    </dl>
+  </div>
 
   <div class="tabs" role="tablist">
     <button type="button" role="tab" [class.on]="tab === 'active'" (click)="tab = 'active'">
@@ -115,10 +129,15 @@
 
       <ol class="route">
         <li class="stop stop--branch">
-          <span class="pin"><i class="bi bi-shop"></i></span>
+          <a class="pin" [href]="branchPlaceHref(order)" target="_blank" rel="noopener" [attr.aria-label]="'orders.branchLocation' | translate">
+            <i class="bi bi-shop"></i>
+          </a>
           <div class="stop-body">
             <small>{{ (isDelivery(order) ? 'orders.pickFrom' : 'orders.pickup') | translate }}</small>
-            <b dir="auto">{{ branchName(order) || ('orders.branchLabel' | translate) }}</b>
+            <a class="branch-link" [href]="branchPlaceHref(order)" target="_blank" rel="noopener">
+              <b dir="auto">{{ branchName(order) || ('orders.branchLabel' | translate) }}</b>
+              <i class="bi bi-box-arrow-up-left"></i>
+            </a>
             <span dir="auto" *ngIf="branchAddress(order) as address">{{ address }}</span>
             <div class="stop-btns">
               <a class="stop-btn" [href]="branchMapHref(order)" target="_blank" rel="noopener">
@@ -190,15 +209,7 @@
         </div>
       </div>
 
-      <div class="confirm" *ngIf="cancelPromptId === order.id">
-        <p>{{ 'orders.cancelHint' | translate }}</p>
-        <div>
-          <button type="button" class="danger" (click)="confirmCancel(order)">{{ 'orders.confirmCancel' | translate }}</button>
-          <button type="button" class="ghost-btn" (click)="dismissCancel()">{{ 'orders.back' | translate }}</button>
-        </div>
-      </div>
-
-      <footer class="actions" *ngIf="cancelPromptId !== order.id">
+      <footer class="actions">
         <button
           type="button"
           class="go"
@@ -214,7 +225,7 @@
           {{ 'orders.finalNote.' + order.status | translate }}
         </p>
 
-        <div class="more">
+        <div class="more" *ngIf="otherActions(order).length">
           <button
             type="button"
             class="kebab"

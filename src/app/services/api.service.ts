@@ -1,6 +1,6 @@
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { map, Observable, retry, throwError, timer } from 'rxjs';
+import { catchError, map, Observable, of, retry, throwError, timer } from 'rxjs';
 import { environment } from '../Environments/environment';
 import { DeliveryOrder } from '../models/order.model';
 
@@ -16,13 +16,51 @@ export class ApiService {
   getOrdersByDate(date: string): Observable<DeliveryOrder[]> {
     return this.http
       .get<unknown>(`${this.baseUrl}/api/Orders/GetOrdersByDate`, {
-        params: { date },
-        headers: this.skipLoading,
+        params: { date, _: String(Date.now()) },
+        headers: this.skipLoading
+          .set('Cache-Control', 'no-cache')
+          .set('Pragma', 'no-cache'),
       })
       .pipe(
         retry({ count: 4, delay: retryWhenThrottled }),
         map((response) => normalizeOrders(response))
       );
+  }
+
+  /** Resolves to null when the backend has no Push endpoints yet. */
+  getVapidPublicKey(): Observable<string | null> {
+    return this.http
+      .get<unknown>(`${this.baseUrl}/api/Push/VapidPublicKey`, { headers: this.skipLoading })
+      .pipe(
+        map((response) => {
+          if (typeof response === 'string') return response.trim() || null;
+          const key = (response as Record<string, unknown> | null)?.['publicKey'];
+          return typeof key === 'string' && key.trim() ? key.trim() : null;
+        }),
+        catchError(() => of(null))
+      );
+  }
+
+  savePushSubscription(subscription: PushSubscriptionJSON): Observable<unknown> {
+    return this.http.post(
+      `${this.baseUrl}/api/Push/Subscribe`,
+      {
+        endpoint: subscription.endpoint,
+        keys: { p256dh: subscription.keys?.['p256dh'], auth: subscription.keys?.['auth'] },
+      },
+      { headers: this.skipLoading }
+    );
+  }
+
+  removePushSubscription(endpoint: string): Observable<unknown> {
+    return this.http.post(`${this.baseUrl}/api/Push/Unsubscribe`, { endpoint }, { headers: this.skipLoading });
+  }
+
+  /** Silent daily attendance ping; no-ops server-side until /api/DriverActivity exists. */
+  sendAttendance(snapshot: Record<string, unknown>): Observable<unknown> {
+    return this.http.post(`${this.baseUrl}/api/DriverActivity/Check-in`, snapshot, {
+      headers: this.skipLoading,
+    });
   }
 
   updateOrderStatus(orderId: number, status: number): Observable<string> {

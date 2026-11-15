@@ -30,7 +30,10 @@
     "turnOn": "Turn alerts on",
     "turnOff": "Turn alerts off",
     "denied": "Notifications are blocked in browser settings; the sound still works.",
-    "newTitle": "New order {{code}}"
+    "iosInstall": "On iPhone: open this page in Safari, tap Share, then \"Add to Home Screen\", and open it from that icon so alerts arrive while the page is closed.",
+    "newTitle": "New order {{code}}",
+    "confirmedTitle": "{{code}} confirmed — start delivery",
+    "readyTitle": "{{code}} is ready for pickup at the branch"
   },
   "orders": {
     "live": "Live",
@@ -58,6 +61,7 @@
       "online": "Paid online"
     },
     "callBranch": "Call branch",
+    "branchLocation": "Open branch location",
     "progress": "delivered",
     "prevWeek": "Previous week",
     "nextWeek": "Next week",
@@ -96,6 +100,8 @@
     "updateFailed": "Could not update the order",
     "newOne": "New order: {{code}}",
     "newMany": "{{count}} new orders",
+    "statusConfirmed": "{{code}} confirmed — start delivery",
+    "statusReady": "{{code}} is ready — pick it up from the branch",
     "stats": {
       "total": "Total orders",
       "activeShort": "in progress",
@@ -123,11 +129,14 @@
     },
     "action": {
       "1": "Confirm order",
-      "2": "Start delivery",
-      "3": "Confirm delivery",
+      "2": "Out for delivery",
+      "3": "Mark delivered",
       "5": "Mark ready"
     },
     "finalNote": {
+      "0": "Waiting for the branch to confirm",
+      "1": "Branch is preparing the order",
+      "5": "Ready for customer pickup at the branch",
       "3": "Order delivered",
       "4": "Order canceled"
     }

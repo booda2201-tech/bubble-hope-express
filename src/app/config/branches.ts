@@ -20,7 +20,7 @@ export const BRANCH_LOCATIONS: BranchLocation[] = [
   {
     lat: 29.9996108,
     lng: 31.099236,
-    mapUrl: 'https://maps.app.goo.gl/yUWWvZ3u1W4RbwDt5',
+    mapUrl: 'https://maps.app.goo.gl/quj9MXEbJp6EnG7X7',
     addressAr: 'محطة فيول أب، الطريق الدائري - طريق الواحات',
     address: 'Fuel Up station, Ring Road - Wahat Road',
     match: /فيول|fuel|الواحات|واحات|wahat|wahaat|الدائري|دائري|ring/i,
@@ -28,13 +28,13 @@ export const BRANCH_LOCATIONS: BranchLocation[] = [
   {
     lat: 29.93367,
     lng: 31.0442767,
-    mapUrl: 'https://maps.app.goo.gl/SLkNq4etTnkWMVLW8',
+    mapUrl: 'https://maps.app.goo.gl/7sSupihYcc18gKJN8',
     match: /زويل|zewail|zuwail|zwail/i,
   },
   {
     lat: 29.9808127,
     lng: 31.1024875,
-    mapUrl: 'https://maps.app.goo.gl/XGaesAeSQiemHJYc9',
+    mapUrl: 'https://maps.app.goo.gl/7F8qhMaCPmBMy8by7',
     match: /حدائق|حدايق|hadayek|hadaek|hadaiq|ahram/i,
   },
 ];

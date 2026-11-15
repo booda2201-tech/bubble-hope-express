@@ -3,11 +3,12 @@ import { Component, DestroyRef, HostListener, OnInit, inject } from '@angular/co
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TranslateService } from '@ngx-translate/core';
 import { ToastrService } from 'ngx-toastr';
-import { catchError, filter, from, interval, map, mergeMap, of } from 'rxjs';
+import { catchError, filter, from, fromEvent, interval, map, mergeMap, of } from 'rxjs';
 import { branchLocation } from '../../config/branches';
 import { environment } from '../../Environments/environment';
 import { DeliveryOrder, OrderItem, OrderStatus } from '../../models/order.model';
 import { ApiService } from '../../services/api.service';
+import { AttendanceService } from '../../services/attendance.service';
 import { OrderAlertService } from '../../services/order-alert.service';
 import {
   coordinates,
@@ -26,6 +27,8 @@ type Tab = 'active' | 'done';
 const LOOKBACK_DAYS = 14;
 /** The API rate-limits bursts (HTTP 429), so day requests are fetched a couple at a time. */
 const MAX_PARALLEL_REQUESTS = 2;
+/** Live board refresh — status changes from the branch must show without a manual refresh. */
+const POLL_MS = 4000;
 
 const STATUS_ICONS: Record<number, string> = {
   [OrderStatus.Pending]: 'bi-hourglass-split',
@@ -43,26 +46,21 @@ const STATUS_ICONS: Record<number, string> = {
 })
 export class OrdersComponent implements OnInit {
   readonly OrderStatus = OrderStatus;
-  readonly statuses = [
-    OrderStatus.Pending,
-    OrderStatus.Confirmed,
-    OrderStatus.ReadyForPickup,
-    OrderStatus.Shipped,
-    OrderStatus.Delivered,
-    OrderStatus.Canceled,
-  ];
   readonly skeletons = [0, 1, 2];
+  checks: { label: string; value: string; ok?: boolean }[] = [];
   orders: DeliveryOrder[] = [];
   tab: Tab = 'active';
   loading = false;
   loadError = false;
   updatingId: number | null = null;
-  cancelPromptId: number | null = null;
   menuOpenId: number | null = null;
 
   private knownIds = new Set<number>();
+  private knownStatus = new Map<number, number>();
   private primed = false;
   private inFlight = false;
+  /** Owner-only diagnostics card, revealed by opening /orders?check. */
+  readonly showCheck = new URLSearchParams(location.search).has('check');
   /** Dev-only: opening /orders?demo injects a local test order (negative id, never sent to the API). */
   private demoPending = !environment.production && new URLSearchParams(location.search).has('demo');
   private destroyRef = inject(DestroyRef);
@@ -71,21 +69,45 @@ export class OrdersComponent implements OnInit {
     private api: ApiService,
     private translate: TranslateService,
     private toastr: ToastrService,
-    public alerts: OrderAlertService
+    public alerts: OrderAlertService,
+    private attendance: AttendanceService
   ) {}
 
   ngOnInit(): void {
     this.load(false);
+    void this.attendance.checkIn();
+    if (this.showCheck) this.checks = this.attendance.diagnostics();
     if (this.demoPending) {
       this.demoPending = false;
       this.scheduleDemoOrder();
     }
-    interval(30000)
+    interval(POLL_MS)
       .pipe(
         filter(() => this.updatingId == null && !this.inFlight),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe(() => this.load(true));
+
+    fromEvent(document, 'visibilitychange')
+      .pipe(
+        filter(() => document.visibilityState === 'visible'),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe(() => this.load(true));
+
+    fromEvent(window, 'focus')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.load(true));
+
+    if (this.alerts.enabled) void this.alerts.push.sync();
+    if ('serviceWorker' in navigator) {
+      fromEvent<MessageEvent>(navigator.serviceWorker, 'message')
+        .pipe(
+          filter((event) => event.data?.type === 'order-push'),
+          takeUntilDestroyed(this.destroyRef)
+        )
+        .subscribe(() => this.load(true));
+    }
   }
 
   toggleAlerts(): void {
@@ -185,18 +207,25 @@ export class OrdersComponent implements OnInit {
 
   /** Replaces one day's orders in place so each day shows up as soon as it arrives. */
   private mergeDay(day: string, rows: DeliveryOrder[]): void {
-    if (this.primed) this.announceNew(rows);
-    for (const order of rows) this.knownIds.add(order.id);
+    if (this.primed) {
+      this.announceNew(rows);
+      this.announceStatusChanges(rows);
+    }
 
     const incoming = rows.map((order) => {
       if (this.updatingId !== order.id) return order;
       const current = this.orders.find((item) => item.id === order.id);
       return current ? { ...order, status: current.status } : order;
     });
+    for (const order of incoming) {
+      this.knownIds.add(order.id);
+      this.knownStatus.set(order.id, order.status);
+    }
     const kept = this.orders.filter((order) => order.id < 0 || order.createdAt.slice(0, 10) !== day);
     this.orders = [...kept, ...incoming].sort(
       (a, b) => a.createdAt.localeCompare(b.createdAt)
-    );  }
+    );
+  }
 
   statusIcon(status: number): string {
     return STATUS_ICONS[status] ?? 'bi-circle';
@@ -206,23 +235,21 @@ export class OrdersComponent implements OnInit {
     return (order.deliveryFee || 0) > 0 || !!(order.street || order.district || '').trim();
   }
 
+  /** Driver may only set Out for Delivery or Delivered — confirm / ready / cancel stay with the branch. */
   primaryAction(order: DeliveryOrder): OrderStatus | null {
-    switch (order.status) {
-      case OrderStatus.Pending:
-        return OrderStatus.Confirmed;
-      case OrderStatus.Confirmed:
-        return this.isDelivery(order) ? OrderStatus.Shipped : OrderStatus.ReadyForPickup;
-      case OrderStatus.Shipped:
-      case OrderStatus.ReadyForPickup:
-        return OrderStatus.Delivered;
-      default:
-        return null;
+    if (!this.isDelivery(order)) return null;
+    if (
+      order.status === OrderStatus.Confirmed ||
+      order.status === OrderStatus.ReadyForPickup
+    ) {
+      return OrderStatus.Shipped;
     }
+    if (order.status === OrderStatus.Shipped) return OrderStatus.Delivered;
+    return null;
   }
 
-  otherActions(order: DeliveryOrder): OrderStatus[] {
-    const primary = this.primaryAction(order);
-    return this.statuses.filter((status) => status !== order.status && status !== primary);
+  otherActions(_order: DeliveryOrder): OrderStatus[] {
+    return [];
   }
 
   toggleMenu(order: DeliveryOrder, event: Event): void {
@@ -233,19 +260,22 @@ export class OrdersComponent implements OnInit {
   requestStatus(order: DeliveryOrder, status: number): void {
     this.menuOpenId = null;
     if (status === order.status || this.updatingId != null) return;
-    if (status === OrderStatus.Canceled) {
-      this.cancelPromptId = order.id;
-      return;
-    }
+    if (!this.canDriverSet(order, status)) return;
     this.applyStatus(order, status);
   }
 
-  confirmCancel(order: DeliveryOrder): void {
-    this.applyStatus(order, OrderStatus.Canceled);
-  }
-
-  dismissCancel(): void {
-    this.cancelPromptId = null;
+  private canDriverSet(order: DeliveryOrder, status: number): boolean {
+    if (!this.isDelivery(order)) return false;
+    if (status === OrderStatus.Shipped) {
+      return (
+        order.status === OrderStatus.Confirmed ||
+        order.status === OrderStatus.ReadyForPickup
+      );
+    }
+    if (status === OrderStatus.Delivered) {
+      return order.status === OrderStatus.Shipped;
+    }
+    return false;
   }
 
   clock(order: DeliveryOrder): string {
@@ -312,6 +342,12 @@ export class OrdersComponent implements OnInit {
     return directionsUrl(customerAddressQuery(order));
   }
 
+  /** The branch's own Google Maps page (name, photos, hours), falling back to directions. */
+  branchPlaceHref(order: DeliveryOrder): string {
+    if (isMapLink(order.branchLocationUrl)) return order.branchLocationUrl!.trim();
+    return branchLocation(order)?.mapUrl ?? this.branchMapHref(order);
+  }
+
   branchMapHref(order: DeliveryOrder): string {
     const pin = coordinates(order.branchLatitude, order.branchLongitude);
     if (pin) return directionsUrl(pin);
@@ -371,7 +407,6 @@ export class OrdersComponent implements OnInit {
 
   private applyStatus(order: DeliveryOrder, status: number): void {
     const previous = order.status;
-    this.cancelPromptId = null;
     if (order.id < 0) {
       order.status = status;
       this.toastr.success(
@@ -422,16 +457,50 @@ export class OrdersComponent implements OnInit {
       fresh.map((order) => ({
         id: order.id,
         title: this.translate.instant('alerts.newTitle', { code: order.code }),
-        body: [
-          order.fullName?.trim(),
-          pickLocalized(this.lang, order.district, order.districtAr) ||
-            pickLocalized(this.lang, order.city, order.cityAr),
-          `${this.money(order.amountToCollect)} ${this.translate.instant('orders.currency')}`,
-        ]
-          .filter(Boolean)
-          .join(' · '),
+        body: this.alertBody(order),
       }))
     );
+  }
+
+  /** Branch confirm / ready must ping the driver — they will not notice a quiet badge change. */
+  private announceStatusChanges(rows: DeliveryOrder[]): void {
+    const hits = rows.filter((order) => {
+      const previous = this.knownStatus.get(order.id);
+      if (previous === undefined || previous === order.status) return false;
+      if (!this.isDelivery(order)) return false;
+      return (
+        order.status === OrderStatus.Confirmed ||
+        order.status === OrderStatus.ReadyForPickup
+      );
+    });
+    if (!hits.length) return;
+
+    for (const order of hits) {
+      const key =
+        order.status === OrderStatus.ReadyForPickup ? 'orders.statusReady' : 'orders.statusConfirmed';
+      this.toastr.success(this.translate.instant(key, { code: order.code }), '', { timeOut: 5000 });
+    }
+    this.alerts.notify(
+      hits.map((order) => ({
+        id: order.id,
+        title: this.translate.instant(
+          order.status === OrderStatus.ReadyForPickup ? 'alerts.readyTitle' : 'alerts.confirmedTitle',
+          { code: order.code }
+        ),
+        body: this.alertBody(order),
+      }))
+    );
+  }
+
+  private alertBody(order: DeliveryOrder): string {
+    return [
+      order.fullName?.trim(),
+      pickLocalized(this.lang, order.district, order.districtAr) ||
+        pickLocalized(this.lang, order.city, order.cityAr),
+      `${this.money(order.amountToCollect)} ${this.translate.instant('orders.currency')}`,
+    ]
+      .filter(Boolean)
+      .join(' · ');
   }
 }
 
