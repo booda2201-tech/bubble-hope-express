@@ -50,6 +50,7 @@
     "deliveryType": "Delivery",
     "branchLabel": "Branch",
     "customer": "Customer",
+    "today": "Today's orders",
     "stepBranch": "First: go to the branch",
     "stepCustomer": "Now: deliver to customer",
     "thenDeliver": "Then deliver to",

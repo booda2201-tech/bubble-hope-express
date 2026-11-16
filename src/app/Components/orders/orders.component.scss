@@ -1034,6 +1034,14 @@ html[dir="rtl"] .who span { text-align: right; }
   .sheet-bar .final { height: 52px; font-size: 1rem; }
 }
 
+.today {
+  display: block;
+  margin-top: 0.1rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
 .sheet-bar {
   flex: none;
   display: flex;

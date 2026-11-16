@@ -50,6 +50,7 @@
     "deliveryType": "توصيل",
     "branchLabel": "الفرع",
     "customer": "العميل",
+    "today": "طلبات اليوم",
     "stepBranch": "روح الفرع الأول",
     "stepCustomer": "دلوقتي: وصّل للعميل",
     "thenDeliver": "بعدها التسليم في",

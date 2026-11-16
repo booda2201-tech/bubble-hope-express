@@ -22,8 +22,6 @@ import {
 
 type Tab = 'active' | 'done';
 
-/** Unfinished orders from the last two weeks stay on the driver's list until closed. */
-const LOOKBACK_DAYS = 14;
 /** The API rate-limits bursts (HTTP 429), so day requests are fetched a couple at a time. */
 const MAX_PARALLEL_REQUESTS = 2;
 /** Live board refresh — status changes from the branch must show without a manual refresh. */
@@ -161,6 +159,14 @@ export class OrdersComponent implements OnInit {
     return this.tab === 'active' ? this.activeOrders : this.doneOrders;
   }
 
+  get todayLabel(): string {
+    return new Intl.DateTimeFormat(this.lang === 'ar' ? 'ar-EG' : 'en-GB', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+    }).format(new Date());
+  }
+
   get cashLeft(): number {
     return this.activeOrders.reduce((sum, order) => sum + (order.amountToCollect || 0), 0);
   }
@@ -174,10 +180,9 @@ export class OrdersComponent implements OnInit {
     }
 
     const today = toIso(new Date());
-    const days =
-      silent && this.primed
-        ? [...new Set([today, ...this.activeOrders.map((order) => order.createdAt.slice(0, 10))])]
-        : recentDays(LOOKBACK_DAYS);
+    // Only today's orders: the board starts fresh every day.
+    this.orders = this.orders.filter((order) => order.id < 0 || order.createdAt.slice(0, 10) === today);
+    const days = [today];
     let succeeded = 0;
 
     from(days)
@@ -648,13 +653,6 @@ function addressQuery(parts: (string | null | undefined)[]): string {
 
 function isOpen(status: number): boolean {
   return status !== OrderStatus.Delivered && status !== OrderStatus.Canceled;
-}
-
-function recentDays(count: number): string[] {
-  const now = new Date();
-  return Array.from({ length: count + 1 }, (_, offset) =>
-    toIso(new Date(now.getFullYear(), now.getMonth(), now.getDate() - offset))
-  );
 }
 
 function toIso(date: Date): string {
