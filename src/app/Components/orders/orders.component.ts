@@ -18,7 +18,6 @@ import {
   isMapLink,
   pickLocalized,
   unitNumber,
-  zoneLetter,
 } from '../../utils/order-format';
 
 type Tab = 'active' | 'done';
@@ -75,6 +74,7 @@ export class OrdersComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.destroyRef.onDestroy(() => (document.body.style.overflow = ''));
     this.load(false);
     void this.attendance.checkIn();
     if (this.showCheck) this.checks = this.attendance.diagnostics();
@@ -124,14 +124,25 @@ export class OrdersComponent implements OnInit {
     this.menuOpenId = null;
   }
 
-  isExpanded(order: DeliveryOrder): boolean {
-    return this.expandedId === order.id;
+  /** The order currently opened in the full-screen sheet. */
+  get selected(): DeliveryOrder | null {
+    return this.orders.find((order) => order.id === this.expandedId) ?? null;
   }
 
   toggleExpand(order: DeliveryOrder, event?: Event): void {
     event?.stopPropagation();
     this.menuOpenId = null;
-    this.expandedId = this.expandedId === order.id ? null : order.id;
+    this.setOpen(order.id);
+  }
+
+  @HostListener('document:keydown.escape')
+  closeSheet(): void {
+    this.setOpen(null);
+  }
+
+  private setOpen(id: number | null): void {
+    this.expandedId = id;
+    document.body.style.overflow = id == null ? '' : 'hidden';
   }
 
   get lang(): string {
@@ -246,6 +257,20 @@ export class OrdersComponent implements OnInit {
     return (order.deliveryFee || 0) > 0 || !!(order.street || order.district || '').trim();
   }
 
+  /** Order is not yet with the driver: next stop is the branch. */
+  goingToBranch(order: DeliveryOrder): boolean {
+    return (
+      order.status === OrderStatus.Pending ||
+      order.status === OrderStatus.Confirmed ||
+      order.status === OrderStatus.ReadyForPickup
+    );
+  }
+
+  /** Order is out for delivery: next stop is the customer. */
+  onTheWay(order: DeliveryOrder): boolean {
+    return order.status === OrderStatus.Shipped;
+  }
+
   /** Driver may only set Out for Delivery or Delivered — confirm / ready / cancel stay with the branch. */
   primaryAction(order: DeliveryOrder): OrderStatus | null {
     if (!this.isDelivery(order)) return null;
@@ -306,6 +331,15 @@ export class OrdersComponent implements OnInit {
 
   street(order: DeliveryOrder): string {
     return (order.street || '').trim();
+  }
+
+  /** Just the neighbourhood — short enough for a phone-width card. */
+  shortArea(order: DeliveryOrder): string {
+    return (
+      pickLocalized(this.lang, order.district, order.districtAr) ||
+      pickLocalized(this.lang, order.city, order.cityAr) ||
+      this.street(order)
+    );
   }
 
   area(order: DeliveryOrder): string {
@@ -371,6 +405,11 @@ export class OrdersComponent implements OnInit {
     );
   }
 
+  /** Route to the landmark next to the customer; null when the order has no landmark. */
+  landmarkHref(order: DeliveryOrder): string | null {
+    return (order.landmark || '').trim() ? directionsUrl(landmarkQuery(order)) : null;
+  }
+
   hasExactPin(order: DeliveryOrder): boolean {
     return !!coordinates(order.latitude, order.longitude) || isMapLink(order.locationUrl);
   }
@@ -412,6 +451,15 @@ export class OrdersComponent implements OnInit {
     return `https://wa.me/${dialPhone(order.phone).replace('+', '')}`;
   }
 
+  /** WhatsApp chat pre-filled to ask the customer for their live location — the only exact pin we can get today. */
+  askLocationHref(order: DeliveryOrder): string {
+    const text = this.translate.instant('orders.askLocationText', {
+      name: (order.fullName || '').trim(),
+      code: order.code,
+    });
+    return `${this.whatsAppHref(order)}?text=${encodeURIComponent(text)}`;
+  }
+
   trackById(_: number, order: DeliveryOrder): number {
     return order.id;
   }
@@ -433,6 +481,7 @@ export class OrdersComponent implements OnInit {
       next: () => {
         order.status = status;
         this.updatingId = null;
+        if (status === OrderStatus.Delivered && this.expandedId === order.id) this.setOpen(null);
         this.toastr.success(
           this.translate.instant('orders.updated', {
             code: order.code,
@@ -563,23 +612,29 @@ function buildDemoOrder(id: number): DeliveryOrder {
 }
 
 /**
- * The whole typed address in the order Google reads Egyptian addresses best, Arabic first:
- * "عمارة 4 ب، منطقة ب، الثروة المعدنية، حدائق الأهرام، الجيزة، مصر".
+ * Street + area only, Arabic first: "الثروة المعدنية، حدائق الأهرام، الجيزة، مصر".
+ * Building / zone numbers are left out on purpose: Google guesses a different "building 44" somewhere
+ * else, while the street itself lands in the right neighbourhood. The driver reads the building from the card.
  */
 function customerAddressQuery(order: DeliveryOrder): string {
-  const building = unitNumber('ar', order.buildingNumber);
   const district = (order.districtAr || order.district || '').trim();
   const street = (order.street || '').trim();
-  const zone = zoneLetter([order.districtAr, order.district, street, order.landmark], order.buildingNumber);
-  const zoneWritten = /منطق[ةه]|area|zone|block/i.test(`${district} ${street}`);
   // The English street is often just the district retyped; the Arabic district already covers it.
   const letters = (text: string | null | undefined) => (text || '').toLowerCase().replace(/[^a-z\u0621-\u064A]/g, '');
   const sameAsDistrict = !!order.districtAr && !!street && letters(street) === letters(order.district);
   return addressQuery([
-    building ? `عمارة ${building}` : '',
-    zone && !zoneWritten ? `منطقة ${zone}` : '',
     sameAsDistrict ? '' : street,
     district,
+    order.cityAr || order.city,
+    order.governorateAr || order.governorate,
+  ]);
+}
+
+/** The named place next to the customer (cafe, pharmacy…) — Google pins named places far more exactly than streets. */
+function landmarkQuery(order: DeliveryOrder): string {
+  return addressQuery([
+    (order.landmark || '').trim(),
+    (order.districtAr || order.district || '').trim(),
     order.cityAr || order.city,
     order.governorateAr || order.governorate,
   ]);
