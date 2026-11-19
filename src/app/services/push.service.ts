@@ -1,6 +1,6 @@
 import { Injectable, NgZone } from '@angular/core';
-import { initializeApp } from '@firebase/app';
-import { MessagePayload, Messaging, getMessaging, getToken, isSupported, onMessage } from '@firebase/messaging';
+import { initializeApp } from 'firebase/app';
+import { MessagePayload, Messaging, getMessaging, getToken, isSupported, onMessage } from 'firebase/messaging';
 import { Subject, firstValueFrom } from 'rxjs';
 import { environment } from '../Environments/environment';
 import { ApiService } from './api.service';
