@@ -2,7 +2,7 @@
   "rewrites": [{ "source": "/driver/:path*", "destination": "/driver/index.html" }],
   "headers": [
     {
-      "source": "/driver/(index.html|sw.js|manifest.webmanifest)",
+      "source": "/driver/(index.html|sw.js|firebase-messaging-sw.js|manifest.webmanifest)",
       "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
     },
     {

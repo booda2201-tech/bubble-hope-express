@@ -74,7 +74,6 @@ export class OrdersComponent implements OnInit {
   ngOnInit(): void {
     this.destroyRef.onDestroy(() => (document.body.style.overflow = ''));
     this.load(false);
-    void this.attendance.checkIn();
     if (this.showCheck) this.checks = this.attendance.diagnostics();
     if (this.demoPending) {
       this.demoPending = false;
@@ -98,7 +97,8 @@ export class OrdersComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.load(true));
 
-    if (this.alerts.enabled) void this.alerts.push.sync();
+    if (this.alerts.enabled) void this.alerts.push.register(false);
+    this.alerts.push.messages$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.load(true));
     if ('serviceWorker' in navigator) {
       fromEvent<MessageEvent>(navigator.serviceWorker, 'message')
         .pipe(

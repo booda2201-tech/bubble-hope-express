@@ -1,40 +1,11 @@
 import { Injectable } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
-import { ApiService } from './api.service';
-import { TokenService } from './token.service';
 
-/**
- * Silent daily attendance ping. On the first page open each day it sends a stable device
- * fingerprint plus environment details to the backend, so the owner can see when a driver
- * started and whether the account is used from the usual phone. Nothing is shown to the driver.
- * No-ops until the backend exposes /api/DriverActivity, and never collects location.
- */
+/** Local device details for the owner-only ?check card. Nothing is sent to the server. */
 @Injectable({
   providedIn: 'root',
 })
 export class AttendanceService {
-  private readonly dayKey = 'attendance_day';
   private readonly idKey = 'device_id';
-  private sending = false;
-
-  constructor(private api: ApiService, private tokenService: TokenService) {}
-
-  /** Call on every app open; it only reaches the network once per calendar day per device. */
-  async checkIn(): Promise<void> {
-    if (this.sending || !this.tokenService.hasToken()) return;
-    const today = localDate();
-    if (localStorage.getItem(this.dayKey) === today) return;
-
-    this.sending = true;
-    try {
-      await firstValueFrom(this.api.sendAttendance(this.snapshot(today)));
-      localStorage.setItem(this.dayKey, today);
-    } catch {
-      // Backend not ready or offline; try again next open.
-    } finally {
-      this.sending = false;
-    }
-  }
 
   /** Shown only behind the ?check link so the owner can read a driver's setup from a screenshot. */
   diagnostics(): { label: string; value: string; ok?: boolean }[] {
@@ -56,22 +27,6 @@ export class AttendanceService {
     ];
   }
 
-  private snapshot(day: string): Record<string, unknown> {
-    const env = describeEnvironment();
-    return {
-      localDate: day,
-      at: new Date().toISOString(),
-      timezoneOffsetMinutes: new Date().getTimezoneOffset(),
-      deviceId: this.deviceId(),
-      fingerprint: fingerprint(),
-      ...env,
-      notificationsOn: 'Notification' in window ? Notification.permission === 'granted' : false,
-      installed:
-        window.matchMedia('(display-mode: standalone)').matches ||
-        (navigator as Navigator & { standalone?: boolean }).standalone === true,
-    };
-  }
-
   /** A random id kept on the device; paired with the fingerprint it flags a new/shared phone. */
   private deviceId(): string {
     let id = localStorage.getItem(this.idKey);
@@ -84,13 +39,6 @@ export class AttendanceService {
     }
     return id;
   }
-}
-
-function localDate(): string {
-  const now = new Date();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${now.getFullYear()}-${month}-${day}`;
 }
 
 /** Stable across sessions on the same phone+browser; changes if the driver switches device. */

@@ -29,6 +29,7 @@
               "src/assets",
               "src/manifest.webmanifest",
               "src/sw.js",
+              "src/firebase-messaging-sw.js",
               "src/web.config",
               { "glob": ".htaccess", "input": "src", "output": "/" }
             ],

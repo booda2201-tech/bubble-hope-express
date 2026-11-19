@@ -1,23 +1,45 @@
-import { Injectable } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { Injectable, NgZone } from '@angular/core';
+import { initializeApp } from '@firebase/app';
+import { MessagePayload, Messaging, getMessaging, getToken, isSupported, onMessage } from '@firebase/messaging';
+import { Subject, firstValueFrom } from 'rxjs';
+import { environment } from '../Environments/environment';
 import { ApiService } from './api.service';
 import { TokenService } from './token.service';
 
-/**
- * Registers this device for Web Push so the backend can wake it up when a new order arrives,
- * even after the driver leaves the page. Without the backend Push endpoints it stays inactive.
- */
+export interface PushMessage {
+  id: number;
+  title: string;
+  body: string;
+}
+
+const FCM_KEY = 'fcmToken';
+
 @Injectable({
   providedIn: 'root',
 })
 export class PushService {
-  /** True once the backend has stored this device's subscription. */
+  /** True once this browser's Firebase token is stored for the logged-in driver. */
   active = false;
 
-  constructor(private api: ApiService, private tokenService: TokenService) {}
+  private readonly messages = new Subject<PushMessage>();
+  readonly messages$ = this.messages.asObservable();
+  private readonly firebaseApp = initializeApp({
+    apiKey: environment.firebase.apiKey,
+    authDomain: environment.firebase.authDomain,
+    projectId: environment.firebase.projectId,
+    storageBucket: environment.firebase.storageBucket,
+    messagingSenderId: environment.firebase.messagingSenderId,
+    appId: environment.firebase.appId,
+  });
+  private messaging: Messaging | null = null;
+  private listening = false;
+  private cancelled = false;
+  private inflight: Promise<void> | null = null;
+
+  constructor(private api: ApiService, private tokenService: TokenService, private zone: NgZone) {}
 
   get supported(): boolean {
-    return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+    return 'serviceWorker' in navigator && 'Notification' in window;
   }
 
   /** iOS only delivers web push to apps added to the home screen. */
@@ -29,57 +51,116 @@ export class PushService {
     return ios && !standalone;
   }
 
-  async sync(): Promise<void> {
-    if (!this.supported || Notification.permission !== 'granted' || !this.tokenService.hasToken()) return;
+  /** Call inside the login click so the browser still treats the permission prompt as a user gesture. */
+  prepare(): void {
+    if (!environment.firebase.vapidKey || !this.supported || Notification.permission !== 'default') return;
+    void Notification.requestPermission().catch(() => undefined);
+  }
 
-    try {
-      const publicKey = await firstValueFrom(this.api.getVapidPublicKey());
-      if (!publicKey) return;
-
-      const registration = await navigator.serviceWorker.ready;
-      const serverKey = base64UrlToBytes(publicKey);
-      let subscription = await registration.pushManager.getSubscription();
-
-      if (subscription && !sameKey(subscription.options.applicationServerKey, serverKey)) {
-        await subscription.unsubscribe();
-        subscription = null;
-      }
-      subscription ??= await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: serverKey,
-      });
-
-      await firstValueFrom(this.api.savePushSubscription(subscription.toJSON()));
-      this.active = true;
-    } catch {
-      this.active = false;
-    }
+  /**
+   * Ask only when `ask` is true (login click or the alerts button).
+   * A restored session registers silently if permission was already granted.
+   */
+  register(ask = false): Promise<void> {
+    this.cancelled = false;
+    if (this.inflight) return this.inflight;
+    this.inflight = this.run(ask).finally(() => {
+      this.inflight = null;
+    });
+    return this.inflight;
   }
 
   /** Call before the auth token is cleared so the backend can drop this device. */
   async unsubscribe(): Promise<void> {
+    this.cancelled = true;
     this.active = false;
-    if (!this.supported) return;
+    await this.inflight?.catch(() => undefined);
+    const token = localStorage.getItem(FCM_KEY);
+    if (!token) return;
     try {
-      const registration = await navigator.serviceWorker.getRegistration();
-      const subscription = await registration?.pushManager.getSubscription();
-      if (!subscription) return;
-      await firstValueFrom(this.api.removePushSubscription(subscription.endpoint)).catch(() => undefined);
-      await subscription.unsubscribe();
+      await firstValueFrom(this.api.removeDevice(token));
     } catch {
-      // Nothing to clean up on this device.
+      // Logout still continues; the next login registers this browser again.
     }
+    localStorage.removeItem(FCM_KEY);
+  }
+
+  private async run(ask: boolean): Promise<void> {
+    if (!this.supported || !this.tokenService.hasToken() || !environment.firebase.vapidKey) return;
+    if (!(await isSupported())) return;
+
+    if (Notification.permission === 'denied') return;
+    if (Notification.permission === 'default') {
+      if (!ask) return;
+      try {
+        const result = await Notification.requestPermission();
+        if (result !== 'granted') return;
+      } catch {
+        return;
+      }
+    }
+
+    try {
+      const registration = await this.worker();
+      const messaging = await this.client();
+      if (!messaging || this.cancelled || !this.tokenService.hasToken()) return;
+
+      const token = await getToken(messaging, {
+        vapidKey: environment.firebase.vapidKey,
+        serviceWorkerRegistration: registration,
+      });
+      if (!token || this.cancelled || !this.tokenService.hasToken()) return;
+
+      localStorage.setItem(FCM_KEY, token);
+      await firstValueFrom(this.api.registerDevice(token));
+      if (this.cancelled) return;
+      this.active = true;
+      this.listen(messaging);
+    } catch (error) {
+      this.active = false;
+      console.error('Firebase device registration failed', error);
+    }
+  }
+
+  private async worker(): Promise<ServiceWorkerRegistration> {
+    const script = new URL('firebase-messaging-sw.js', document.baseURI).href;
+    const registration = await navigator.serviceWorker.register(script);
+    const others = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(
+      others
+        .filter((item) => {
+          const url = item.active?.scriptURL || item.installing?.scriptURL || item.waiting?.scriptURL || '';
+          return !url.includes('firebase-messaging-sw.js');
+        })
+        .map((item) => item.unregister())
+    );
+    await navigator.serviceWorker.ready;
+    return registration;
+  }
+
+  private async client(): Promise<Messaging | null> {
+    if (this.messaging) return this.messaging;
+    if (!(await isSupported())) return null;
+    this.messaging = getMessaging(this.firebaseApp);
+    return this.messaging;
+  }
+
+  private listen(messaging: Messaging): void {
+    if (this.listening) return;
+    this.listening = true;
+    onMessage(messaging, (payload) => {
+      const message = toMessage(payload);
+      this.zone.run(() => this.messages.next(message));
+    });
   }
 }
 
-function base64UrlToBytes(value: string): Uint8Array {
-  const padded = (value + '='.repeat((4 - (value.length % 4)) % 4)).replace(/-/g, '+').replace(/_/g, '/');
-  const raw = atob(padded);
-  return Uint8Array.from(raw, (char) => char.charCodeAt(0));
-}
-
-function sameKey(current: ArrayBuffer | null, expected: Uint8Array): boolean {
-  if (!current) return false;
-  const bytes = new Uint8Array(current);
-  return bytes.length === expected.length && bytes.every((byte, index) => byte === expected[index]);
+function toMessage(payload: MessagePayload): PushMessage {
+  const raw = payload.data?.['orderId'];
+  const id = Number(raw);
+  return {
+    id: Number.isFinite(id) && id > 0 ? id : Date.now(),
+    title: payload.notification?.title || 'طلب جديد',
+    body: payload.notification?.body || '',
+  };
 }

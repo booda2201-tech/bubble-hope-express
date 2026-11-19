@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
+import { PushService } from '../../services/push.service';
 import { loginPhone } from '../../utils/order-format';
 
 function egyptianMobile(control: AbstractControl): ValidationErrors | null {
@@ -30,7 +31,8 @@ export class LoginComponent {
     private fb: FormBuilder,
     private auth: AuthService,
     private router: Router,
-    private translate: TranslateService
+    private translate: TranslateService,
+    private push: PushService
   ) {}
 
   submit(): void {
@@ -42,6 +44,7 @@ export class LoginComponent {
 
     const phoneNumber = loginPhone(this.form.controls.phoneNumber.value || '');
     const password = (this.form.controls.password.value || '').trim();
+    this.push.prepare();
     this.submitting = true;
 
     this.auth
@@ -54,6 +57,7 @@ export class LoginComponent {
             return;
           }
           if (this.auth.persistSession(response, phoneNumber)) {
+            void this.push.register(true);
             void this.router.navigate(['/orders']);
             return;
           }

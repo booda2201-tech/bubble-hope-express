@@ -54,11 +54,14 @@ export class OrderAlertService {
     });
 
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker
-        .register('sw.js', { scope: './' })
+      navigator.serviceWorker.ready
         .then((registration) => (this.registration = registration))
         .catch(() => (this.registration = null));
     }
+
+    this.push.messages$.subscribe((message) => {
+      this.zone.run(() => this.showPush(message));
+    });
 
     this.unlockAudio();
   }
@@ -84,13 +87,12 @@ export class OrderAlertService {
       }
     }
     this.ring(1);
-    await this.push.sync();
+    await this.push.register(true);
   }
 
   disable(): void {
     this.enabled = false;
     localStorage.setItem(STORAGE_KEY, 'off');
-    void this.push.unsubscribe();
   }
 
   notify(alerts: OrderAlert[]): void {
@@ -108,6 +110,18 @@ export class OrderAlertService {
 
     if (this.permission !== 'granted') return;
     for (const alert of alerts.slice(0, 3)) this.showSystemNotification(alert, !hidden);
+  }
+
+  /** Firebase delivers this while the page is open; the browser will not show it on its own. */
+  private showPush(alert: OrderAlert): void {
+    const visible = document.visibilityState === 'visible';
+    if (this.enabled && !visible) {
+      this.unseen += 1;
+      document.title = `(${this.unseen}) ${this.baseTitle}`;
+    }
+    if (this.enabled) this.ring(visible ? 1 : ALERT_ROUNDS);
+    if (this.permission !== 'granted') return;
+    this.showSystemNotification(alert, visible);
   }
 
   /** While the page is on screen the in-page bell already plays, so the system notification stays silent. */

@@ -1,6 +1,6 @@
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { catchError, map, Observable, of, retry, throwError, timer } from 'rxjs';
+import { map, Observable, retry, throwError, timer } from 'rxjs';
 import { environment } from '../Environments/environment';
 import { DeliveryOrder } from '../models/order.model';
 
@@ -27,38 +27,17 @@ export class ApiService {
       );
   }
 
-  /** Resolves to null when the backend has no Push endpoints yet. */
-  getVapidPublicKey(): Observable<string | null> {
-    return this.http
-      .get<unknown>(`${this.baseUrl}/api/Push/VapidPublicKey`, { headers: this.skipLoading })
-      .pipe(
-        map((response) => {
-          if (typeof response === 'string') return response.trim() || null;
-          const key = (response as Record<string, unknown> | null)?.['publicKey'];
-          return typeof key === 'string' && key.trim() ? key.trim() : null;
-        }),
-        catchError(() => of(null))
-      );
-  }
-
-  savePushSubscription(subscription: PushSubscriptionJSON): Observable<unknown> {
+  registerDevice(token: string): Observable<unknown> {
     return this.http.post(
-      `${this.baseUrl}/api/Push/Subscribe`,
-      {
-        endpoint: subscription.endpoint,
-        keys: { p256dh: subscription.keys?.['p256dh'], auth: subscription.keys?.['auth'] },
-      },
+      `${this.baseUrl}/api/notifications/devices`,
+      { token, platform: 'Web' },
       { headers: this.skipLoading }
     );
   }
 
-  removePushSubscription(endpoint: string): Observable<unknown> {
-    return this.http.post(`${this.baseUrl}/api/Push/Unsubscribe`, { endpoint }, { headers: this.skipLoading });
-  }
-
-  /** Silent daily attendance ping; no-ops server-side until /api/DriverActivity exists. */
-  sendAttendance(snapshot: Record<string, unknown>): Observable<unknown> {
-    return this.http.post(`${this.baseUrl}/api/DriverActivity/Check-in`, snapshot, {
+  removeDevice(token: string): Observable<unknown> {
+    return this.http.request('DELETE', `${this.baseUrl}/api/notifications/devices`, {
+      body: { token },
       headers: this.skipLoading,
     });
   }
