@@ -452,17 +452,18 @@ export class OrdersComponent implements OnInit {
     return `tel:${dialPhone(order.phone)}`;
   }
 
+  /** Every WhatsApp button opens the chat with the "please send me your location" message already typed. */
   whatsAppHref(order: DeliveryOrder): string {
-    return `https://wa.me/${dialPhone(order.phone).replace('+', '')}`;
-  }
-
-  /** WhatsApp chat pre-filled to ask the customer for their live location — the only exact pin we can get today. */
-  askLocationHref(order: DeliveryOrder): string {
     const text = this.translate.instant('orders.askLocationText', {
       name: (order.fullName || '').trim(),
       code: order.code,
     });
-    return `${this.whatsAppHref(order)}?text=${encodeURIComponent(text)}`;
+    return `https://wa.me/${dialPhone(order.phone).replace('+', '')}?text=${encodeURIComponent(text)}`;
+  }
+
+  /** WhatsApp chat pre-filled to ask the customer for their live location — the only exact pin we can get today. */
+  askLocationHref(order: DeliveryOrder): string {
+    return this.whatsAppHref(order);
   }
 
   trackById(_: number, order: DeliveryOrder): number {
