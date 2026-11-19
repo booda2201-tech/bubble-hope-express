@@ -2,6 +2,16 @@
 importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js');
 
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
+
+/* Registered before Firebase so this handler reads the push and still runs after every tab is closed. */
+self.addEventListener('push', (event) => {
+  event.stopImmediatePropagation();
+  const payload = event.data ? event.data.json().catch(() => ({})) : Promise.resolve({});
+  event.waitUntil(payload.then(present));
+});
+
 firebase.initializeApp({
   apiKey: 'AIzaSyCQd1D6NbL4CUhEJiiIsDj31zLyZTCcy0U',
   authDomain: 'bubblehope-53b8f.firebaseapp.com',
@@ -11,33 +21,7 @@ firebase.initializeApp({
   appId: '1:537902604580:web:6052b8e7425c567c4613b1',
 });
 
-self.addEventListener('install', () => self.skipWaiting());
-self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
-
-const messaging = firebase.messaging();
-const ICON = new URL('assets/icons/icon-192.png', self.registration.scope).href;
-const VIBRATION = [500, 200, 500, 200, 500, 200, 900];
-
-messaging.onBackgroundMessage((payload) => {
-  const data = payload.data || {};
-  const title = (payload.notification && payload.notification.title) || 'طلب جديد';
-  const body = (payload.notification && payload.notification.body) || '';
-
-  return self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
-    for (const client of windows) client.postMessage({ type: 'order-push', orderId: data.orderId });
-    if (windows.some((client) => client.visibilityState === 'visible')) return undefined;
-    return self.registration.showNotification(title, {
-      body,
-      icon: ICON,
-      badge: ICON,
-      tag: data.orderId ? 'order-' + data.orderId : 'new-order',
-      renotify: true,
-      requireInteraction: true,
-      vibrate: VIBRATION,
-      data: { url: new URL('orders', self.registration.scope).href },
-    });
-  });
-});
+firebase.messaging();
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
@@ -50,3 +34,27 @@ self.addEventListener('notificationclick', (event) => {
     })
   );
 });
+
+function present(payload) {
+  const data = payload.data || {};
+  const notification = payload.notification || {};
+  const title = notification.title || data.title || 'طلب جديد';
+  const body = notification.body || data.body || '';
+  const orderId = data.orderId || '';
+
+  return self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
+    for (const client of windows) {
+      client.postMessage({ type: 'order-push', orderId: orderId, title: title, body: body });
+    }
+    const icon = new URL('assets/icons/icon-192.png', self.registration.scope).href;
+    return self.registration.showNotification(title, {
+      body: body,
+      icon: icon,
+      badge: icon,
+      tag: orderId ? 'order-' + orderId : 'new-order',
+      renotify: true,
+      requireInteraction: true,
+      data: { url: new URL('orders', self.registration.scope).href, orderId: orderId },
+    });
+  });
+}

@@ -57,6 +57,18 @@ export class OrderAlertService {
       navigator.serviceWorker.ready
         .then((registration) => (this.registration = registration))
         .catch(() => (this.registration = null));
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        const data = event.data;
+        if (!data || data.type !== 'order-push' || !data.title) return;
+        const id = Number(data.orderId);
+        this.zone.run(() =>
+          this.showPush({
+            id: Number.isFinite(id) && id > 0 ? id : Date.now(),
+            title: String(data.title),
+            body: typeof data.body === 'string' ? data.body : '',
+          })
+        );
+      });
     }
 
     this.push.messages$.subscribe((message) => {
@@ -102,8 +114,6 @@ export class OrderAlertService {
     if (hidden) {
       this.unseen += alerts.length;
       document.title = `(${this.unseen}) ${this.baseTitle}`;
-      // The service worker already rang and vibrated for this order via push.
-      if (this.push.active) return;
     }
 
     this.ring(ALERT_ROUNDS);
